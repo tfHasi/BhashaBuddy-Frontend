@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "500532918298",
+    "project_id": "dictation-tutor",
+    "storage_bucket": "dictation-tutor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500532918298:android:5b3f5425d70132dbec39a3",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdXZCeJgbyogm1C4Ys8kXjbtRtBdaXlN8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
