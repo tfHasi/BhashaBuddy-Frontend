@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 80),
             Center(
               child: SizedBox(
-                width: 200, // Fixed width for consistent button sizing
+                width: 180, // Fixed width for consistent button sizing
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.map),
                   label: Text(
@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 20),
             Center(
               child: SizedBox(
-                width: 200,
+                width: 180,
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.settings),
                   label: Text(
@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 20),
             Center(
               child: SizedBox(
-                width: 200,
+                width: 180,
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.leaderboard),
                   label: Text(
@@ -112,7 +112,7 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 20),
             Center(
               child: SizedBox(
-                width: 200,
+                width: 180,
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.star),
                   label: Text(
