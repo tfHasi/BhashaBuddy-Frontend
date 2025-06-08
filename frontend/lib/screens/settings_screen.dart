@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './widgets/bottom_navbar.dart';
 
 class SettingsScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -11,6 +12,10 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: Text('Settings')),
       body: Center(
         child: Text('Settings for ${user['nickname'] ?? 'Admin'}'),
+      ),
+      bottomNavigationBar: BottomNavBar(
+        currentRoute: 'settings',
+        user: user,
       ),
     );
   }
