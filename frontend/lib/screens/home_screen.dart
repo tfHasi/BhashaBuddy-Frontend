@@ -12,7 +12,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home'),
+        title: Text('Welcome ${user['nickname'].toUpperCase()}'),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),

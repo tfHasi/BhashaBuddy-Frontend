@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost:8000'; // Change for production
+  static final String baseUrl = dotenv.env['BASE_URL']!;
   
   Future<Map<String, dynamic>?> studentSignup(String email, String password, String nickname) async {
     final response = await http.post(
@@ -41,13 +42,11 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>?> login(String email, String password) async {
-    // Sign in with Firebase
     await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    // Get user details from backend
     final response = await http.post(
       Uri.parse('$baseUrl/login'),
       headers: {'Content-Type': 'application/json'},
