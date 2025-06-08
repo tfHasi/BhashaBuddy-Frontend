@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
+import './widgets/back_button.dart';
 
 class LeaderboardScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -9,7 +10,11 @@ class LeaderboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Leaderboard')),
+      appBar: AppBar(
+        leading: AnimatedBackButton(
+          onTap: () => Navigator.pop(context),
+        ),
+      ),
       body: Center(
         child: Text(
           'Leaderboard for ${user['type'] == 'student' ? 'Student' : 'Admin'}',

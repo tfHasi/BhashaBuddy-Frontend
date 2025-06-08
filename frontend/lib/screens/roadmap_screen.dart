@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
+import './widgets/back_button.dart';
 
 class RoadMapScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -16,40 +17,24 @@ class RoadMapScreen extends StatelessWidget {
               flex: 11,
               child: Stack(
                 children: [
+                  // Map Background Image
                   Positioned.fill(
                     child: Image.asset(
                       'assets/images/map.png',
                       fit: BoxFit.cover,
                     ),
                   ),
-                  Container(
-                    child: AppBar(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      title: const Text(
-                        'Map',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          shadows: [
-                            Shadow(
-                              offset: Offset(1, 1),
-                              blurRadius: 3,
-                              color: Colors.black54,
-                            ),
-                          ],
+                  Positioned(
+                    top: 20,
+                    left: 16,
+                    right: 16,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        AnimatedBackButton(
+                          onTap: () => Navigator.pop(context),
                         ),
-                      ),
-                      iconTheme: const IconThemeData(
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 3,
-                            color: Colors.black54,
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                 ],
