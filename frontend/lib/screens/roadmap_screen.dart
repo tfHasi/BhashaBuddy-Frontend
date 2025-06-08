@@ -9,40 +9,35 @@ class RoadMapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    // Use 90% of screen height (leaving 10% space at bottom)
-    final double imageHeight = screenHeight * 0.9;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    
+    // Calculate available height (excluding status bar and leaving 10% space at bottom)
+    final availableHeight = screenHeight - statusBarHeight;
+    final double imageHeight = availableHeight * 0.925;
 
     return Scaffold(
       // Remove default AppBar
       body: Stack(
         children: [
-          // Scrollable content
-          SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Stack(
-              children: [
-                // Base Map Image - full width, 90% height
-                SizedBox(
-                  width: screenWidth,
-                  height: imageHeight,
-                  child: Image.asset(
-                    'assets/images/map.png',
-                    fit: BoxFit.cover,
+          // Add top padding to avoid status bar
+          Padding(
+            padding: EdgeInsets.only(top: statusBarHeight*0.8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Stack(
+                children: [
+                  // Base Map Image - full width, calculated height
+                  SizedBox(
+                    width: screenWidth,
+                    height: imageHeight,
+                    child: Image.asset(
+                      'assets/images/map.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-                // Example Positioned level icon (adjust top/left accordingly)
-                Positioned(
-                  top: imageHeight * 0.2, // 20% from top
-                  left: screenWidth * 0.3, // 30% from left
-                  child: GestureDetector(
-                    onTap: () {
-                      // Navigate to level
-                    },
-                    child: Icon(Icons.star, color: Colors.yellow, size: 40),
-                  ),
-                ),
-                // Add more Positioned widgets for other level markers
-              ],
+                  // Add more Positioned widgets for other level markers
+                ],
+              ),
             ),
           ),
           // Overlay AppBar on top of the image
@@ -51,17 +46,13 @@ class RoadMapScreen extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              // Add padding for status bar
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-              ),
               decoration: BoxDecoration(
                 // Semi-transparent background for better visibility
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.5),
                     Colors.transparent,
                   ],
                 ),
@@ -70,10 +61,10 @@ class RoadMapScreen extends StatelessWidget {
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 title: const Text(
-                  'Road Map',
+                  'Map',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     shadows: [
                       Shadow(
                         offset: Offset(1, 1),
