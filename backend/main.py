@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.student import student_router
 from routes.admin import admin_router
 from routes.auth import auth_router
+from routes.websocket import websocket_router
+from routes.game import game_router 
 
 app = FastAPI()
 app.add_middleware(
@@ -17,6 +19,8 @@ app.add_middleware(
 app.include_router(student_router, prefix="/student", tags=["Students"])
 app.include_router(admin_router, prefix="/admin", tags=["Admins"])
 app.include_router(auth_router, tags=["Auth"])
+app.include_router(websocket_router, tags=["WebSocket"])
+app.include_router(game_router, tags=["Game"])
 
 # Health check endpoint for Koyeb
 @app.get("/health")

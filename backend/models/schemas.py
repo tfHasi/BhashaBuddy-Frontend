@@ -12,3 +12,8 @@ class AdminSignup(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class TaskSubmission(BaseModel):
+    user_id: str
+    level_id: str
+    task_id: str
