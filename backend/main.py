@@ -5,7 +5,9 @@ from routes.student import student_router
 from routes.admin import admin_router
 from routes.auth import auth_router
 from routes.websocket import websocket_router
-from routes.game import game_router 
+from routes.game.progress import progress_router
+from routes.game.task import task_router
+from routes.game.leaderboard import leaderboard_router
 
 app = FastAPI()
 app.add_middleware(
@@ -20,7 +22,9 @@ app.include_router(student_router, prefix="/student", tags=["Students"])
 app.include_router(admin_router, prefix="/admin", tags=["Admins"])
 app.include_router(auth_router, tags=["Auth"])
 app.include_router(websocket_router, tags=["WebSocket"])
-app.include_router(game_router, tags=["Game"])
+app.include_router(progress_router, prefix="/progress", tags=["Progress"])
+app.include_router(task_router, prefix="/task", tags=["Tasks"])
+app.include_router(leaderboard_router, prefix="/leaderboard", tags=["Leaderboard"])
 
 # Health check endpoint for Koyeb
 @app.get("/health")
