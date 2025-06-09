@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
 import './widgets/back_button.dart';
+import './widgets/score.dart';
 
 class SettingsScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -14,9 +15,22 @@ class SettingsScreen extends StatelessWidget {
         leading: AnimatedBackButton(
           onTap: () => Navigator.pop(context),
         ),
+        actions: [
+          if (user['type'] == 'student')
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: ScoreWidget(
+                userId: user['id']?.toString() ?? '',
+                nickname: user['nickname']?.toString() ?? 'User',
+                initialStars: (user['stars'] as int?) ?? 0,
+              ),
+            ),
+        ],
       ),
       body: Center(
-        child: Text('Settings for ${user['nickname'] ?? 'Admin'}'),
+        child: Text(
+          'Settings for ${user['type'] == 'student' ? 'Student' : 'Admin'}',
+        ),
       ),
       bottomNavigationBar: BottomNavBar(
         currentRoute: 'settings',
