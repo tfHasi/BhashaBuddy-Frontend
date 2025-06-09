@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from config import get_db
-from websocket_manager import ConnectionManager
+from websocket_manager import manager
 from models.schemas import TaskSubmission
 from firebase_admin import firestore
 import logging
@@ -64,10 +64,10 @@ async def submit_task(submission: TaskSubmission):
             'task_id': submission.task_id,
             'total_stars': total_stars
         }
-        await ConnectionManager.broadcast_score_update(score_update)
+        await manager.broadcast_score_update(score_update)
         # Broadcast updated leaderboard
         leaderboard = await get_current_leaderboard()
-        await ConnectionManager.broadcast_leaderboard_update(leaderboard)
+        await manager.broadcast_leaderboard_update(leaderboard)
         return {
             'message': 'Task completed',
             'total_stars': total_stars
