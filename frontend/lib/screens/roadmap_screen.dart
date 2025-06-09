@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
 import './widgets/back_button.dart';
 import './widgets/checkpoint_overlay.dart';
+import './widgets/score.dart';
 
 class RoadMapScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -18,7 +19,6 @@ class RoadMapScreen extends StatelessWidget {
               flex: 11,
               child: Stack(
                 children: [
-                  // Map Background Image
                   Positioned.fill(
                     child: Image.asset(
                       'assets/images/map.png',
@@ -35,11 +35,18 @@ class RoadMapScreen extends StatelessWidget {
                     left: 16,
                     right: 16,
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AnimatedBackButton(
                           onTap: () => Navigator.pop(context),
                         ),
+                        if (user['type'] == 'student')
+                          ScoreWidget(
+                            userId: user['id']?.toString() ?? '',
+                            nickname: user['nickname']?.toString() ?? 'User',
+                            initialStars: (user['stars'] as int?) ?? 0,
+                          ),
                       ],
                     ),
                   ),
