@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
 import './widgets/back_button.dart';
+import './widgets/checkpoint_overlay.dart';
 
 class RoadMapScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -23,6 +24,11 @@ class RoadMapScreen extends StatelessWidget {
                       'assets/images/map.png',
                       fit: BoxFit.cover,
                     ),
+                  ),
+                  CheckpointOverlay(
+                    onCheckpointTap: (index) {
+                      print("Tapped checkpoint $index"); 
+                    },
                   ),
                   Positioned(
                     top: 20,
