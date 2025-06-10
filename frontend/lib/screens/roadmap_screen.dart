@@ -3,14 +3,43 @@ import './widgets/bottom_navbar.dart';
 import './widgets/back_button.dart';
 import './widgets/checkpoint_overlay.dart';
 import './widgets/score.dart';
+import './widgets/level_overlay.dart';
 
-class RoadMapScreen extends StatelessWidget {
+class RoadMapScreen extends StatefulWidget {
   final Map<String, dynamic> user;
 
   const RoadMapScreen({super.key, required this.user});
 
   @override
+  State<RoadMapScreen> createState() => _RoadMapScreenState();
+}
+
+class _RoadMapScreenState extends State<RoadMapScreen> {
+  bool _showOverlay = false;
+  int _selectedLevel = 1;
+
+  void _handleCheckpointTap(int index) {
+    setState(() {
+      _selectedLevel = index;
+      _showOverlay = true;
+    });
+  }
+
+  void _closeOverlay() {
+    setState(() {
+      _showOverlay = false;
+    });
+  }
+
+  void _startLevel() {
+    _closeOverlay();
+    print("Starting level $_selectedLevel");
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -26,9 +55,7 @@ class RoadMapScreen extends StatelessWidget {
                     ),
                   ),
                   CheckpointOverlay(
-                    onCheckpointTap: (index) {
-                      print("Tapped checkpoint $index"); 
-                    },
+                    onCheckpointTap: _handleCheckpointTap,
                   ),
                   Positioned(
                     top: 20,
@@ -50,6 +77,12 @@ class RoadMapScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (_showOverlay)
+                    LevelOverlay(
+                      level: _selectedLevel,
+                      onPlay: _startLevel,
+                      onClose: _closeOverlay,
+                    ),
                 ],
               ),
             ),
