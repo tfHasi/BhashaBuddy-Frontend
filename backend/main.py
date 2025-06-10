@@ -8,6 +8,7 @@ from routes.websocket import websocket_router
 from routes.game.progress import progress_router
 from routes.game.task import task_router
 from routes.game.leaderboard import leaderboard_router
+from routes.seed import admin_router
 
 app = FastAPI()
 app.add_middleware(
@@ -25,6 +26,7 @@ app.include_router(websocket_router, tags=["WebSocket"])
 app.include_router(progress_router, prefix="/progress", tags=["Progress"])
 app.include_router(task_router, prefix="/task", tags=["Tasks"])
 app.include_router(leaderboard_router, prefix="/leaderboard", tags=["Leaderboard"])
+app.include_router(admin_router)
 
 # Health check endpoint for Koyeb
 @app.get("/health")
