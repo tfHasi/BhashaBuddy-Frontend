@@ -31,30 +31,26 @@ class _LevelOverlayState extends State<LevelOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Stack(
       children: [
-        // Dim background
-        Positioned.fill(
-          child: Container(
-            color: Colors.black54,
-          ),
-        ),
-
-        // Centered Blue Square with content
+        Container(color: Colors.black54),
+        // Centered content
         Center(
           child: Stack(
             alignment: Alignment.center,
             children: [
               Image.asset(
                 'assets/images/blue_square.png',
-                width: 250,
-                height: 250,
+                width: size.width * 0.6,
+                height: size.width * 0.6,
                 fit: BoxFit.fill,
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Curved star layout
+                  // Curved star row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -79,13 +75,13 @@ class _LevelOverlayState extends State<LevelOverlay> {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  // Yellow Input Button background with level text
+                  // Level label
                   Stack(
                     alignment: Alignment.center,
                     children: [
                       Image.asset(
                         'assets/images/yellow_input_button.png',
-                        width: 160,
+                        width: size.width * 0.4,
                         height: 60,
                         fit: BoxFit.contain,
                       ),
@@ -99,10 +95,8 @@ class _LevelOverlayState extends State<LevelOverlay> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Yellow Round Button with Dark Play Icon
+                  // Play button
                   GestureDetector(
                     onTap: widget.onPlay,
                     child: Stack(
@@ -124,11 +118,9 @@ class _LevelOverlayState extends State<LevelOverlay> {
             ],
           ),
         ),
-
-        // Close Button
-        Positioned(
-          top: 225,
-          right: 70,
+        // Responsive close button
+        Align(
+          alignment: const Alignment(0.6, -0.325), 
           child: GestureDetector(
             onTap: _handleCloseTap,
             child: Image.asset(
