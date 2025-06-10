@@ -18,9 +18,9 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
   bool _showOverlay = false;
   int _selectedLevel = 1;
 
-  void _handleCheckpointTap(int index) {
+  void _handleCheckpointTap(int levelIndex) {
     setState(() {
-      _selectedLevel = index;
+      _selectedLevel = levelIndex;
       _showOverlay = true;
     });
   }
@@ -34,6 +34,27 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
   void _startLevel() {
     _closeOverlay();
     print("Starting level $_selectedLevel");
+    // TODO: Navigate to task screen for selected level
+  }
+
+  Map<int, int> _calculateLevelStars(Map<String, dynamic> user) {
+    final completedTasks = user['completed_tasks'] as List<dynamic>? ?? [];
+
+    Map<int, int> levelStars = {
+      for (int i = 1; i <= 6; i++) i: 0,
+    };
+
+    for (final task in completedTasks) {
+      final levelId = task['level_id'];
+      if (levelId != null && levelId.startsWith('level_')) {
+        final levelNum = int.tryParse(levelId.split('_')[1]);
+        if (levelNum != null && levelStars.containsKey(levelNum)) {
+          levelStars[levelNum] = levelStars[levelNum]! + 1;
+        }
+      }
+    }
+
+    return levelStars;
   }
 
   @override
@@ -56,6 +77,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
                   ),
                   CheckpointOverlay(
                     onCheckpointTap: _handleCheckpointTap,
+                    levelStars: _calculateLevelStars(user),
                   ),
                   Positioned(
                     top: 20,
@@ -63,7 +85,6 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
                     right: 16,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AnimatedBackButton(
                           onTap: () => Navigator.pop(context),
@@ -72,7 +93,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
                           ScoreWidget(
                             userId: user['id']?.toString() ?? '',
                             nickname: user['nickname']?.toString() ?? 'User',
-                            initialStars: (user['stars'] as int?) ?? 0,
+                            initialStars: (user['total_stars'] as int?) ?? 0,
                           ),
                       ],
                     ),
