@@ -54,9 +54,9 @@ class BottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(context, Icons.person, 'Profile', 'home'),
+          _buildNavItem(context, Icons.home_rounded, 'Profile', 'home'),
           _buildNavItem(context, Icons.leaderboard, 'Leaderboard', 'leaderboard'),
-          _buildNavItem(context, Icons.map, 'Map', 'roadmap'),
+          _buildNavItem(context, Icons.map_rounded, 'Map', 'roadmap'),
           _buildNavItem(context, Icons.settings, 'Settings', 'settings'),
         ],
       ),
