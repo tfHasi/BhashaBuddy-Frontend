@@ -44,7 +44,13 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color.fromARGB(255, 255, 255, 255),
+      height: 70,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/navbar_blue.png'),
+          fit: BoxFit.fill,
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -67,27 +73,17 @@ class BottomNavBar extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => _navigate(context, route),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.blue : Colors.grey[600],
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.blue : Colors.grey[600],
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? const Color(0xFF757575) : const Color.fromARGB(255, 255, 255, 255),
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+        ],
       ),
     );
   }
