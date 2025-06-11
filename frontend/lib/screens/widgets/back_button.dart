@@ -37,14 +37,14 @@ class _AnimatedBackButtonState extends State<AnimatedBackButton> {
         },
         child: _tapped
             ? Image.asset(
-                'assets/images/back_small.png',
+                'assets/images/red_back_button_small.png',
                 key: ValueKey('small'),
                 width: 36,
               )
             : Image.asset(
-                'assets/images/back_large.png',
+                'assets/images/red_back_button_large.png',
                 key: ValueKey('large'),
-                width: 48,
+                width: 36,
               ),
       ),
     );

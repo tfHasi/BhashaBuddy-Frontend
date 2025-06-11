@@ -58,7 +58,7 @@ class _ScoreWidgetState extends State<ScoreWidget> {
 Widget build(BuildContext context) {
   return Container(
     width: 60,
-    height: 40,
+    height: 35,
     decoration: BoxDecoration(
       image: DecorationImage(
         image: AssetImage('assets/images/blue_button_rectangle_gradient.png'),
