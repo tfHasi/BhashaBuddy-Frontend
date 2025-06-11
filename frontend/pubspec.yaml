@@ -96,3 +96,5 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/homescreen/
+    - assets/fonts/
