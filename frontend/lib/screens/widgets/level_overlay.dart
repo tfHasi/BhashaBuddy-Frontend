@@ -42,7 +42,7 @@ class _LevelOverlayState extends State<LevelOverlay> {
             alignment: Alignment.center,
             children: [
               Image.asset(
-                'assets/images/LevelOverlay/red_square_depth.png',
+                'assets/images/blue_square.png',
                 width: size.width * 0.6,
                 height: size.width * 0.6,
                 fit: BoxFit.fill,
