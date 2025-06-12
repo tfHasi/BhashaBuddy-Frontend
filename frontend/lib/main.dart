@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       title: 'WordWiz',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        fontFamily: 'assets/fonts/Kenny Future Narrow.ttf',
+        fontFamily: 'Fredoka',
       ),
       home: LoginScreen(),
       debugShowCheckedModeBanner: false,

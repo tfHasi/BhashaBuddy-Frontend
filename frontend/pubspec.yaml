@@ -99,3 +99,8 @@ flutter:
     - assets/images/homescreen/
     - assets/fonts/
     - assets/images/LevelOverlay/
+  
+  fonts:
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka/static/Fredoka-Regular.ttf
