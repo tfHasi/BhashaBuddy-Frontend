@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background_image.png', 
+              'assets/images/homescreen/background_image.png', 
             fit: BoxFit.fill,
             ),
           ),
@@ -134,7 +134,7 @@ class HomeScreen extends StatelessWidget {
           Image.asset(
             imagePath,
             height: 50,
-            width: 150,
+            width: 140,
             fit: BoxFit.fill,
           ),
           Row(
