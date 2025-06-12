@@ -36,6 +36,7 @@ class _ScoreWidgetState extends State<ScoreWidget> {
       await _webSocketService.connectToScoreUpdates();
       _scoreSubscription = _webSocketService.scoreUpdates.listen((data) {
         final userId = data['user_id']?.toString();
+        // Match with Firebase UID
         if (userId == widget.userId) {
           setState(() {
             _totalStars = data['total_stars'] ?? _totalStars;
@@ -54,36 +55,36 @@ class _ScoreWidgetState extends State<ScoreWidget> {
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-  return Container(
-    width: 60,
-    height: 35,
-    decoration: BoxDecoration(
-      image: DecorationImage(
-        image: AssetImage('assets/images/blue_button_rectangle_gradient.png'),
-        fit: BoxFit.fill,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 35,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/blue_button_rectangle_gradient.png'),
+          fit: BoxFit.fill,
+        ),
       ),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          'assets/images/yellow_star.png',
-          width: 22,
-          height: 22,
-        ),
-        SizedBox(width: 8),
-        Text(
-          '$_totalStars',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 255, 255, 255),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/yellow_star.png',
+            width: 22,
+            height: 22,
           ),
-        ),
-      ],
-    ),
-  );
-}
+          SizedBox(width: 8),
+          Text(
+            '$_totalStars',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: const Color.fromARGB(255, 255, 255, 255),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

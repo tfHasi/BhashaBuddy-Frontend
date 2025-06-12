@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class LevelOverlay extends StatefulWidget {
   final int level;
+  final int stars;
   final VoidCallback onPlay;
   final VoidCallback onClose;
 
   const LevelOverlay({
     super.key,
     required this.level,
+    required this.stars,
     required this.onPlay,
     required this.onClose,
   });
@@ -27,6 +29,33 @@ class _LevelOverlayState extends State<LevelOverlay> {
         widget.onClose();
       }
     });
+  }
+
+  // Helper method to build star row with actual progress
+  Widget _buildStarRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, 15),
+          child: Image.asset(
+            widget.stars >= 1 ? 'assets/images/yellow_star.png' : 'assets/images/empty_star.png',
+            width: 48,
+          ),
+        ),
+        Image.asset(
+          widget.stars >= 2 ? 'assets/images/yellow_star.png' : 'assets/images/empty_star.png',
+          width: 64,
+        ),
+        Transform.translate(
+          offset: const Offset(0, 15),
+          child: Image.asset(
+            widget.stars >= 3 ? 'assets/images/yellow_star.png' : 'assets/images/empty_star.png',
+            width: 48,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -50,30 +79,7 @@ class _LevelOverlayState extends State<LevelOverlay> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Curved star row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.translate(
-                        offset: const Offset(0, 15),
-                        child: Image.asset(
-                          'assets/images/empty_star.png',
-                          width: 48,
-                        ),
-                      ),
-                      Image.asset(
-                        'assets/images/empty_star.png',
-                        width: 64,
-                      ),
-                      Transform.translate(
-                        offset: const Offset(0, 15),
-                        child: Image.asset(
-                          'assets/images/empty_star.png',
-                          width: 48,
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildStarRow(),
                   const SizedBox(height: 40),
                   // Level label
                   Stack(
@@ -118,7 +124,6 @@ class _LevelOverlayState extends State<LevelOverlay> {
             ],
           ),
         ),
-        // Responsive close button
         Align(
           alignment: const Alignment(0.6, -0.325), 
           child: GestureDetector(

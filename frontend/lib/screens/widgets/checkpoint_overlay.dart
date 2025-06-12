@@ -1,24 +1,42 @@
 import 'package:flutter/material.dart';
+import '../../services/progress_service.dart';
 
 class CheckpointOverlay extends StatelessWidget {
   final void Function(int checkpointIndex) onCheckpointTap;
-  final Map<int, int> levelStars; // Stars per level
-
+  final Map<int, int> levelStars;
+  final Map<String, dynamic>? levelsData;
+  
   const CheckpointOverlay({
     super.key,
     required this.onCheckpointTap,
     required this.levelStars,
+    this.levelsData,
   });
+
+  // Use ProgressService for consistent unlocking logic
+  bool _isLevelUnlocked(int level) {
+    if (levelsData != null) {
+      return ProgressService.isLevelUnlocked(
+        levelsData!['levels'] ?? {}, 
+        level
+      );
+    } else {
+      // Fallback to original logic if no levels data
+      if (level == 1) return true;
+      final previousLevelStars = levelStars[level - 1] ?? 0;
+      return previousLevelStars >= 2;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final List<Offset> checkpointPositions = [
-      Offset(0.442, 0.856),
-      Offset(0.585, 0.755),
-      Offset(0.416, 0.674),
-      Offset(0.7, 0.569),
-      Offset(0.377, 0.502),
-      Offset(0.542, 0.391),
+      Offset(0.442, 0.856), // Level 1
+      Offset(0.585, 0.755), // Level 2
+      Offset(0.416, 0.674), // Level 3
+      Offset(0.7, 0.569),   // Level 4
+      Offset(0.377, 0.502), // Level 5
+      Offset(0.542, 0.391), // Level 6
     ];
 
     return LayoutBuilder(
@@ -30,9 +48,7 @@ class CheckpointOverlay extends StatelessWidget {
           children: List.generate(checkpointPositions.length, (index) {
             final pos = checkpointPositions[index];
             final level = index + 1;
-
-            // Level 1 is always unlocked
-            final isUnlocked = level == 1 || (levelStars[level - 1] ?? 0) >= 2;
+            final isUnlocked = _isLevelUnlocked(level);
 
             return Positioned(
               left: width * pos.dx - (width * 0.04),
