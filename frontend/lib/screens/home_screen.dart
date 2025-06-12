@@ -4,7 +4,6 @@ import 'login_screen.dart';
 import 'settings_screen.dart';
 import 'roadmap_screen.dart';
 import 'credits_screen.dart';
-import './widgets/bottom_navbar.dart';
 
 class HomeScreen extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -113,7 +112,6 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       ),
-      bottomNavigationBar: BottomNavBar(currentRoute: 'home', user: user),
     );
   }
 
