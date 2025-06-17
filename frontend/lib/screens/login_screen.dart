@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Image.asset(image, height: 50, width: 200, fit: BoxFit.fill),
+          Image.asset(image, height: 50, width: 150, fit: BoxFit.fill),
           _loading && !isOutline
               ? SizedBox(
                   height: 20,

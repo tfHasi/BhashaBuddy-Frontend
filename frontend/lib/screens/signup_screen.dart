@@ -58,7 +58,7 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Image.asset(imagePath, height: 50, width: 200, fit: BoxFit.fill),
+            Image.asset(imagePath, height: 50, width: 150, fit: BoxFit.fill),
             isLoading
                 ? SizedBox(
                     height: 20,
