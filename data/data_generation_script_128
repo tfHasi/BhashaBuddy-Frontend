@@ -1,0 +1,54 @@
+import os
+import random
+from PIL import Image, ImageDraw, ImageFont
+
+# Configuration
+IMG_SIZE = (128, 128)                  # Output image size for MobileNet
+CHARS = [chr(i) for i in range(65, 91)] # A-Z uppercase
+FONTS_DIR = './fonts/'                 # Directory with .ttf or .otf fonts
+OUTPUT_DIR = './char_dataset_128/'    # Output dataset directory
+SAMPLES_PER_CHAR = 300                 # Number of images per character
+
+# Create output directories for each character
+for char in CHARS:
+    os.makedirs(os.path.join(OUTPUT_DIR, char), exist_ok=True)
+
+# Load all font paths
+font_files = [os.path.join(FONTS_DIR, f) for f in os.listdir(FONTS_DIR) if f.endswith(('.ttf', '.otf'))]
+
+# Generate synthetic images
+for char in CHARS:
+    print(f"Generating samples for character: {char}")
+    for i in range(SAMPLES_PER_CHAR):
+        # Create blank white RGB canvas
+        img = Image.new('RGB', IMG_SIZE, color=(255, 255, 255))
+        draw = ImageDraw.Draw(img)
+
+        # Random font and size
+        font_path = random.choice(font_files)
+        font_size = random.randint(80, 110)
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except Exception as e:
+            print(f"Failed to load font: {font_path}, skipping...")
+            continue
+
+        # Measure character size
+        text_bbox = draw.textbbox((0, 0), char, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+
+        # Center character with slight offset
+        x = (IMG_SIZE[0] - text_width) // 2 + random.randint(-10, 10)
+        y = (IMG_SIZE[1] - text_height) // 2 + random.randint(-10, 10)
+
+        # Draw the character in black
+        draw.text((x, y), char, fill=(0, 0, 0), font=font)
+
+        # Apply slight rotation
+        angle = random.uniform(-10, 10)
+        img = img.rotate(angle, fillcolor=(255, 255, 255))
+
+        # Save image
+        filename = f"{char}_{i:04d}.png"
+        img.save(os.path.join(OUTPUT_DIR, char, filename))
