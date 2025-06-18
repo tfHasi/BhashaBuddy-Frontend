@@ -28,7 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Login failed: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -41,22 +42,43 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscure = false,
     TextInputType inputType = TextInputType.text,
   }) {
-    return TextFormField(
-      controller: ctrl,
-      obscureText: obscure,
-      keyboardType: inputType,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.9),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    const borderColor = Color.fromARGB(255, 42, 177, 234);
+
+    return Container(
+      padding: EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor, width: 2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: 2),
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white.withOpacity(0.9),
+        ),
+        child: TextFormField(
+          controller: ctrl,
+          obscureText: obscure,
+          keyboardType: inputType,
+          validator: validator,
+          style: TextStyle(fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(
+              color: const Color.fromARGB(255, 20, 21, 21),
+              fontWeight: FontWeight.w600,
+            ),
+            border: InputBorder.none,
+            contentPadding:
+                EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _styledButton(String label, VoidCallback? onPressed, {bool isOutline = false}) {
+  Widget _styledButton(String label, VoidCallback? onPressed,
+      {bool isOutline = false}) {
     final image = isOutline
         ? 'assets/images/homescreen/red_button_border_depth.png'
         : 'assets/images/homescreen/red_button_depth_gradient.png';
@@ -97,7 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset('assets/images/homescreen/background_image.png', fit: BoxFit.fill),
+              child: Image.asset('assets/images/homescreen/background_image.png',
+                  fit: BoxFit.cover),
             ),
             Container(color: Colors.black.withOpacity(0.3)),
             Center(
@@ -107,24 +130,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      Text('Welcome Back', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900)),
+                      Text('Welcome Back',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900)),
                       SizedBox(height: 8),
-                      Text('Sign in to your account', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      Text('Sign in to your account',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 16)),
                       SizedBox(height: 40),
 
                       _styledTextField(
                         ctrl: _emailCtrl,
                         label: 'Email',
                         inputType: TextInputType.emailAddress,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Enter email' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Enter email' : null,
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 12),
 
                       _styledTextField(
                         ctrl: _passCtrl,
                         label: 'Password',
                         obscure: true,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Enter password' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Enter password' : null,
                       ),
                       SizedBox(height: 32),
 
@@ -132,7 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 16),
 
                       _styledButton('Sign Up', () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => SignupScreen()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => SignupScreen()));
                       }, isOutline: true),
                     ],
                   ),
