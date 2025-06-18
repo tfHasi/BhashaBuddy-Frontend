@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import './widgets/back_button.dart';
+import './widgets/terms_overlay.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
@@ -15,9 +16,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final _authService = AuthService();
   bool _isLoading = false;
   bool _isStudent = true;
+  bool _agreedToTerms = false;
 
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You must agree to the terms and conditions.')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
@@ -77,48 +85,46 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       );
 
-Widget _styledTextField({
-  required TextEditingController controller,
-  required String label,
-  required String? Function(String?) validator,
-  bool obscureText = false,
-  TextInputType keyboardType = TextInputType.text,
-}) {
-  const borderColor = Color.fromARGB(255, 42, 177, 234);
+  Widget _styledTextField({
+    required TextEditingController controller,
+    required String label,
+    required String? Function(String?) validator,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    const borderColor = Color.fromARGB(255, 42, 177, 234);
 
-  return Container(
-    padding: EdgeInsets.all(2), // Outer border thickness
-    decoration: BoxDecoration(
-      border: Border.all(color: borderColor, width: 2),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Container(
+    return Container(
+      padding: EdgeInsets.all(2),
       decoration: BoxDecoration(
         border: Border.all(color: borderColor, width: 2),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        validator: validator,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor, width: 2),
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white.withOpacity(0.9),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: const Color.fromARGB(255, 20, 21, 21),
-            fontWeight: FontWeight.w600,
+        child: TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: TextStyle(fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(
+              color: const Color.fromARGB(255, 20, 21, 21),
+              fontWeight: FontWeight.w600,
+            ),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _styledRadioTile({
     required String title,
@@ -156,7 +162,7 @@ Widget _styledTextField({
               ),
             ),
             Container(color: const Color.fromARGB(59, 0, 0, 0)),
-            /// Back Button aligned to top-left
+
             Positioned(
               top: 20,
               left: 16,
@@ -230,7 +236,46 @@ Widget _styledTextField({
                                 (v?.isEmpty ?? true) ? 'Enter nickname' : null,
                           ),
                         ],
-                        SizedBox(height: 32),
+                        SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _agreedToTerms,
+                              onChanged: (val) {
+                                setState(() => _agreedToTerms = val ?? false);
+                              },
+                              activeColor:
+                                  const Color.fromARGB(255, 42, 177, 234),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => showDialog(
+                                  context: context,
+                                  builder: (_) => TermsOverlay(),
+                                ),
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: 'I agree to the ',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 14),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Terms and Conditions',
+                                        style: TextStyle(
+                                          decoration: TextDecoration.underline,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              Color.fromARGB(255, 42, 177, 234),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 24),
                         _styledButton(
                           label: 'Sign Up',
                           onPressed: _isLoading ? null : _signup,
