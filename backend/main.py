@@ -19,7 +19,7 @@ app.include_router(student_router, prefix="/student", tags=["Students"])
 app.include_router(admin_router, prefix="/admin", tags=["Admins"])
 app.include_router(auth_router, tags=["Auth"])
 app.include_router(websocket_router, tags=["WebSocket"])
-app.include_router(levels_router)
+app.include_router(levels_router, prefix="/levels", tags=["Levels"])
 
 # Health check endpoint for Koyeb
 @app.get("/health")
