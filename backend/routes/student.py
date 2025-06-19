@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from firebase_admin import auth
 from config import get_db
-from models.schemas import StudentSignup
+from models.schemas import StudentSignup, TaskResponse
 import uuid
 from datetime import datetime
 
@@ -46,31 +46,43 @@ async def student_signup(data: StudentSignup):
 async def complete_task(student_uid: str, level_id: int, task_id: int):
     """Complete a task and award stars"""
     try:
+        # Fetch level data to validate task_id
+        level_doc = db.collection('levels').document(str(level_id)).get()
+        if not level_doc.exists():
+            raise HTTPException(status_code=404, detail="Level not found")
+        tasks = level_doc.to_dict().get("tasks", [])
+        if task_id >= len(tasks):
+            raise HTTPException(status_code=400, detail="Invalid task ID")
+        task_word = tasks[task_id]
+
+        # Fetch student document
         student_ref = db.collection('students').document(student_uid)
         student_doc = student_ref.get()
-        if not student_doc.exists:
+        if not student_doc.exists():
             raise HTTPException(status_code=404, detail="Student not found")
+
         student_data = student_doc.to_dict()
         progress = student_data.get('progress', {})
         levels = progress.get('levels', {})
-        # Get current level progress
         level_key = str(level_id)
+
         if level_key not in levels:
             raise HTTPException(status_code=400, detail="Level not unlocked")
+
         level_progress = levels[level_key]
-        
+
         # Add task if not already completed
         if task_id not in level_progress['tasks_completed']:
             level_progress['tasks_completed'].append(task_id)
             level_progress['stars_earned'] = len(level_progress['tasks_completed'])
-            # Check if level is completed (2+ stars) and unlock next level
+
+            # Unlock next level if current one is completed
             if level_progress['stars_earned'] >= 2:
                 level_progress['completed_at'] = datetime.utcnow().isoformat()
                 next_level = level_id + 1
-                next_level_key = str(next_level)
-                # Unlock next level if it doesn't exist
-                if next_level_key not in levels:
-                    levels[next_level_key] = {
+                next_key = str(next_level)
+                if next_key not in levels:
+                    levels[next_key] = {
                         'level_id': next_level,
                         'stars_earned': 0,
                         'tasks_completed': [],
@@ -78,17 +90,18 @@ async def complete_task(student_uid: str, level_id: int, task_id: int):
                         'completed_at': None
                     }
                     progress['current_level'] = next_level
-        
-        # Update total stars
+
         progress['total_stars'] = sum(level['stars_earned'] for level in levels.values())
-        # Update Firestore
         student_ref.update({'progress': progress})
+
         return {
             "message": "Task completed successfully",
+            "task_word": task_word,
             "stars_earned": level_progress['stars_earned'],
             "level_completed": level_progress['stars_earned'] >= 2,
             "next_level_unlocked": level_progress['stars_earned'] >= 2
         }
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -137,3 +150,15 @@ async def get_available_levels(student_uid: str):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@student_router.get("/levels/{level_id}/tasks", response_model=TaskResponse)
+async def get_level_tasks(level_id: int):
+    try:
+        doc_ref = db.collection('levels').document(str(level_id))
+        doc = doc_ref.get()
+        if not doc.exists():
+            raise HTTPException(status_code=404, detail="Level not found")
+        tasks = doc.to_dict().get("tasks", [])
+        return {"level": level_id, "tasks": tasks}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

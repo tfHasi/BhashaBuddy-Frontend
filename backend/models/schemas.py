@@ -13,6 +13,10 @@ class LevelProgress(BaseModel):
     is_unlocked: bool
     completed_at: Optional[str] = None 
 
+class TaskResponse(BaseModel):
+    level: int
+    tasks: List[str]
+
 class StudentProgress(BaseModel):
     current_level: int
     total_stars: int
