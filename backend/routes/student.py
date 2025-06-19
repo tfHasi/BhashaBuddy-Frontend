@@ -150,15 +150,3 @@ async def get_available_levels(student_uid: str):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-@student_router.get("/levels/{level_id}/tasks", response_model=TaskResponse)
-async def get_level_tasks(level_id: int):
-    try:
-        doc_ref = db.collection('levels').document(str(level_id))
-        doc = doc_ref.get()
-        if not doc.exists():
-            raise HTTPException(status_code=404, detail="Level not found")
-        tasks = doc.to_dict().get("tasks", [])
-        return {"level": level_id, "tasks": tasks}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

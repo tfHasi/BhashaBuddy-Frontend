@@ -5,7 +5,7 @@ from routes.student import student_router
 from routes.admin import admin_router
 from routes.auth import auth_router
 from routes.websocket import websocket_router
-
+from routes.level import levels_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +19,7 @@ app.include_router(student_router, prefix="/student", tags=["Students"])
 app.include_router(admin_router, prefix="/admin", tags=["Admins"])
 app.include_router(auth_router, tags=["Auth"])
 app.include_router(websocket_router, tags=["WebSocket"])
+app.include_router(levels_router)
 
 # Health check endpoint for Koyeb
 @app.get("/health")

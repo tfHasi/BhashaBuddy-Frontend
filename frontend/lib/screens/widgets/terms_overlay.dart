@@ -31,8 +31,8 @@ class TermsOverlay extends StatelessWidget {
 
   <h2>4. Educational Features</h2>
   <ul>
-    <li>The App uses speech-to-text technology to evaluate spoken words.</li>
-    <li>The App may prompt children to upload images of real-world objects or handwriting for educational tasks.</li>
+    <li>The App uses text-to-speech technology to invoke spoken words.</li>
+    <li>The App may prompt children to upload images of handwriting for educational tasks.</li>
     <li>All features are designed with the safety and development of children in mind.</li>
   </ul>
 
@@ -40,7 +40,7 @@ class TermsOverlay extends StatelessWidget {
   <p>We provide parental tools for monitoring progress, limiting screen time, and accessing learning reports. Parents must ensure they supervise usage appropriately.</p>
 
   <h2>6. Intellectual Property</h2>
-  <p>All content, features, and source code in this App are the intellectual property of [Your Company/App Name] and protected by copyright laws.</p>
+  <p>All content, features, and source code in this App are the intellectual property of Caramel Labs and protected by copyright laws.</p>
 
   <h2>7. Limitation of Liability</h2>
   <p>We do not accept responsibility for any indirect or consequential loss arising from the use of the App. Use of the App is at your own risk.</p>
