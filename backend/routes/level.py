@@ -4,7 +4,7 @@ from config import get_db
 db = get_db()
 levels_router = APIRouter()
 
-@levels_router.get("/levels/{level_id}/tasks")
+@levels_router.get("/{level_id}/tasks")
 async def get_level_tasks(level_id: int):
     try:
         doc_ref = db.collection('levels').document(str(level_id))
