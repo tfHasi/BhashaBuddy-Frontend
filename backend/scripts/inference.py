@@ -6,26 +6,33 @@ from tensorflow.keras.layers import PReLU
 from sklearn.preprocessing import LabelEncoder
 import pickle
 
-# Paths
-model_dir = '../intelligence'
-label_encoder_path = '../intelligence/label_encoder.pkl'
+base_dir = os.path.dirname(__file__)
+model_dir = os.path.join(base_dir, 'intelligence')
+label_encoder_path = os.path.join(model_dir, 'label_encoder.pkl')
 
 # Load label encoder
 with open(label_encoder_path, 'rb') as f:
-    le = pickle.load(f)
+    le: LabelEncoder = pickle.load(f)
 
-# Load all models
-models = [load_model(os.path.join(model_dir, f'model_fold_{i}.keras'), custom_objects={'PReLU': PReLU}) for i in range(1, 6)]
+# Load ensemble models
+models = [
+    load_model(os.path.join(model_dir, f'model_fold_{i}.keras'), custom_objects={'PReLU': PReLU})
+    for i in range(1, 6)
+]
 
-# Preprocess one character image
-def preprocess_image(path):
-    img = Image.open(path).convert('L').resize((32, 32), Image.Resampling.LANCZOS)
+# Preprocess
+def preprocess_image(image: Image.Image) -> np.ndarray:
+    img = image.convert('L').resize((32, 32), Image.Resampling.LANCZOS)
     img = np.array(img, dtype='float32') / 255.0
     return img.reshape(1, 32, 32, 1)
 
-# Predict a single character image path
-def predict_character(image_path):
-    img = preprocess_image(image_path)
-    avg_pred = sum(model.predict(img, verbose=0) for model in models) / len(models)
+# Predict one character
+def predict_character(image: Image.Image) -> str:
+    img_array = preprocess_image(image)
+    avg_pred = sum(model.predict(img_array, verbose=0) for model in models) / len(models)
     predicted_label = np.argmax(avg_pred)
     return le.inverse_transform([predicted_label])[0]
+
+# Predict full word from list of character images
+def predict_word_from_images(images: list[Image.Image]) -> str:
+    return ''.join(predict_character(img) for img in images)
