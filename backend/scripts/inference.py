@@ -6,8 +6,8 @@ from tensorflow.keras.layers import PReLU
 from sklearn.preprocessing import LabelEncoder
 import pickle
 
-base_dir = os.path.dirname(__file__)
-model_dir = os.path.join(base_dir, 'intelligence')
+backend_dir = os.path.dirname(os.path.dirname(__file__))
+model_dir = os.path.join(backend_dir, 'intelligence')
 label_encoder_path = os.path.join(model_dir, 'label_encoder.pkl')
 
 # Load label encoder
