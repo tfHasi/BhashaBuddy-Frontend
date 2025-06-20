@@ -17,7 +17,8 @@ class TaskScreen extends StatefulWidget {
 
 class _TaskScreenState extends State<TaskScreen> {
   List<String>? tasks;
-  Map<int, List<Uint8List>> capturedImages = {};
+  int currentTaskIndex = 0;
+  Map<int, List<Uint8List?>> capturedImages = {};
 
   @override
   void initState() {
@@ -27,94 +28,175 @@ class _TaskScreenState extends State<TaskScreen> {
 
   Future<void> _loadTasks() async {
     final loaded = await TaskService.getTasksForLevel(widget.level);
-    if (loaded != null) setState(() => tasks = loaded);
+    if (mounted) setState(() => tasks = loaded);
   }
 
-  Future<void> _submitTask(int taskIndex) async {
-    final images = capturedImages[taskIndex];
-    if (images == null || images.length != tasks![taskIndex].length) {
+  void _nextTask() {
+    if (currentTaskIndex < (tasks?.length ?? 0) - 1) {
+      setState(() => currentTaskIndex++);
+    }
+  }
+
+  void _previousTask() {
+    if (currentTaskIndex > 0) {
+      setState(() => currentTaskIndex--);
+    }
+  }
+
+  Future<void> _submitTask() async {
+    final word = tasks?[currentTaskIndex] ?? '';
+    final images = capturedImages[currentTaskIndex] ?? [];
+
+    if (images.length != word.length || images.any((img) => img == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete all boxes')),
+        const SnackBar(content: Text('Please draw all characters')),
       );
       return;
     }
 
-    // Save images temporarily
-    final dir = await getTemporaryDirectory();
-    List<File> files = [];
-    for (int i = 0; i < images.length; i++) {
-      final file = File('${dir.path}/char_$i.png');
-      await file.writeAsBytes(images[i]);
-      files.add(file);
-    }
-
-    final result = await TaskService.predictTask(
-      studentUid: widget.user['uid'],
-      levelId: widget.level,
-      taskId: taskIndex,
-      images: files,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Analyzing your drawings...'),
+          ],
+        ),
+      ),
     );
 
-    if (result != null) {
-      final correct = result['correct'] == true;
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(correct ? "✅ Correct!" : "❌ Try Again"),
-          content: Text(
-              "Predicted: ${result['predicted_word']}\nExpected: ${result['target_word']}"),
-        ),
+    try {
+      final dir = await getTemporaryDirectory();
+      final files = await Future.wait(
+        images.asMap().entries.map((e) async {
+          final file = File('${dir.path}/char_${e.key}.png');
+          await file.writeAsBytes(e.value!);
+          return file;
+        }),
+      );
+
+      final result = await TaskService.predictTask(
+        studentUid: widget.user['uid'],
+        levelId: widget.level,
+        taskId: currentTaskIndex,
+        images: files,
+      );
+
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (result != null) {
+        _showResultDialog(
+          correct: result['correct'] == true,
+          predicted: result['predicted_word'],
+          expected: result['target_word'],
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }
 
+  void _showResultDialog({
+    required bool correct,
+    required String predicted,
+    required String expected,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(correct ? "Correct!" : "Try Again"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Your answer: $predicted"),
+            Text("Expected: $expected"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(correct ? 'Continue' : 'Try Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Level ${widget.level} Tasks')),
-      body: tasks == null
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: tasks!.length,
-              itemBuilder: (context, taskIndex) {
-                final word = tasks![taskIndex];
-                final charCount = word.length;
+    if (tasks == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-                return Card(
-                  margin: const EdgeInsets.all(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    final word = tasks![currentTaskIndex];
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Level ${widget.level}')),
+      body: Column(
+        children: [
+          LinearProgressIndicator(
+            value: (currentTaskIndex + 1) / tasks!.length,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(word.toUpperCase(),
+                    style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 20,
+                    children: List.generate(word.length, (i) => Column(
                       children: [
-                        Text('Task ${taskIndex + 1}: $word'),
+                        Text(word[i].toUpperCase()),
                         const SizedBox(height: 8),
-                        Row(
-                          children: List.generate(charCount, (charIndex) {
-                            return Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: DrawableCanvas(
-                                onCapture: (bytes) {
-                                  capturedImages[taskIndex] ??= List.filled(charCount, Uint8List(0));
-                                  capturedImages[taskIndex]![charIndex] = bytes;
-                                },
-                              ),
-                            );
-                          }),
+                        DrawableCanvas(
+                          size: 100,
+                          onCapture: (bytes) {
+                            capturedImages[currentTaskIndex] ??= 
+                              List.filled(word.length, null);
+                            capturedImages[currentTaskIndex]![i] = bytes;
+                          },
                         ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: () => _submitTask(taskIndex),
-                            child: const Text('Submit'),
-                          ),
-                        )
                       ],
-                    ),
+                    )),
                   ),
-                );
-              },
+                ],
+              ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: _previousTask,
+                  child: const Text('Previous'),
+                ),
+                ElevatedButton(
+                  onPressed: _submitTask,
+                  child: const Text('Submit'),
+                ),
+                ElevatedButton(
+                  onPressed: _nextTask,
+                  child: const Text('Next'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
