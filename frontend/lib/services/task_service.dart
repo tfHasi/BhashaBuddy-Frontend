@@ -1,11 +1,20 @@
-import 'package:http/http.dart' as http;
+import 'dart:io';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 class TaskService {
   static final String baseUrl = dotenv.env['BASE_URL']!;
 
-  static Future<List<dynamic>?> getTasksForLevel(int levelId) async {
+  // Fetch task words for a given level
+  static Future<List<String>?> getTasksForLevel(int levelId) async {
+    if (levelId < 1 || levelId > 6) {
+      print('⚠️ Invalid level ID: $levelId');
+      return null;
+    }
+
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/levels/$levelId/tasks'),
@@ -14,35 +23,63 @@ class TaskService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['tasks'] ?? [];
-      } else if (response.statusCode == 404) {
-        print('Level $levelId not found');
-        return null;
-      } else if (response.statusCode == 400) {
-        print('Invalid level ID: $levelId');
-        return null;
+        return List<String>.from(body['tasks'] ?? []);
       } else {
-        print('Failed to get tasks: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('❌ Failed to fetch tasks: ${response.statusCode}');
+        print(response.body);
         return null;
       }
     } catch (e) {
-      print('Error fetching tasks for level $levelId: $e');
+      print('❌ Error fetching tasks: $e');
       return null;
     }
   }
 
-  // Helper method to validate level ID before making request
-  static bool isValidLevelId(int levelId) {
-    return levelId >= 1 && levelId <= 6; 
-  }
+  // Submit drawn characters for prediction
+  static Future<Map<String, dynamic>?> predictTask({
+    required String studentUid,
+    required int levelId,
+    required int taskId,
+    required List<File> images,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/student/$studentUid/predict-task');
+      final request = http.MultipartRequest('POST', uri);
 
-  // Enhanced method with validation
-  static Future<List<dynamic>?> getTasksForLevelSafe(int levelId) async {
-    if (!isValidLevelId(levelId)) {
-      print('Invalid level ID: $levelId');
+      // Add form fields
+      request.fields['level_id'] = levelId.toString();
+      request.fields['task_id'] = taskId.toString();
+
+      // Add image files
+      for (int i = 0; i < images.length; i++) {
+        final file = images[i];
+        final fileName = file.path.split('/').last;
+        final mimeType = lookupMimeType(file.path) ?? 'image/png';
+        final parts = mimeType.split('/');
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'images',
+            file.path,
+            filename: fileName,
+            contentType: MediaType(parts[0], parts[1]),
+          ),
+        );
+      }
+
+      // Send request and decode response
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('❌ Prediction failed (${response.statusCode}): ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error predicting task: $e');
       return null;
     }
-    return await getTasksForLevel(levelId);
   }
 }
