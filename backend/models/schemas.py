@@ -17,6 +17,9 @@ class TaskResponse(BaseModel):
     level: int
     tasks: List[str]
 
+class PredictTaskRequest(BaseModel):
+    images: List[str]  # base64 encoded images, one per character
+
 class StudentProgress(BaseModel):
     current_level: int
     total_stars: int
