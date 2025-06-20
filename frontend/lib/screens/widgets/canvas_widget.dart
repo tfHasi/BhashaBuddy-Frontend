@@ -20,17 +20,33 @@ class DrawableCanvas extends StatefulWidget {
 class _DrawableCanvasState extends State<DrawableCanvas> {
   final List<Offset?> _points = [];
   final GlobalKey _key = GlobalKey();
+  bool _hasDrawing = false;
 
-  void _addPoint(Offset point) => setState(() => _points.add(point));
+  void _addPoint(Offset point) {
+    setState(() {
+      _points.add(point);
+      _hasDrawing = true;
+    });
+  }
+
   void _endStroke() => setState(() => _points.add(null));
-  void _clear() => setState(() => _points.clear());
+
+  void _clear() {
+    setState(() {
+      _points.clear();
+      _hasDrawing = false;
+    });
+  }
 
   Future<void> _capture() async {
     final boundary = _key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary != null) {
-      final image = await boundary.toImage(pixelRatio: 1.0);
+      // Capture at higher resolution for better ML model input
+      final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData != null) widget.onCapture(byteData.buffer.asUint8List());
+      if (byteData != null) {
+        widget.onCapture(byteData.buffer.asUint8List());
+      }
     }
   }
 
@@ -38,25 +54,51 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        RepaintBoundary(
-          key: _key,
-          child: GestureDetector(
-            onPanUpdate: (details) => _addPoint(details.localPosition),
-            onPanEnd: (_) => _endStroke(),
-            child: CustomPaint(
-              painter: _Painter(_points),
-              child: SizedBox(
-                width: widget.size,
-                height: widget.size,
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(4),
+            color: Colors.white, // White background for ML model
+          ),
+          child: RepaintBoundary(
+            key: _key,
+            child: GestureDetector(
+              onPanUpdate: (details) => _addPoint(details.localPosition),
+              onPanEnd: (_) => _endStroke(),
+              child: CustomPaint(
+                painter: _Painter(_points),
+                child: SizedBox(
+                  width: widget.size,
+                  height: widget.size,
+                ),
               ),
             ),
           ),
         ),
+        const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(icon: const Icon(Icons.clear), onPressed: _clear),
-            IconButton(icon: const Icon(Icons.check), onPressed: _capture),
+            IconButton(
+              icon: const Icon(Icons.clear, size: 18),
+              onPressed: _clear,
+              tooltip: 'Clear',
+            ),
+            IconButton(
+              icon: const Icon(Icons.check, size: 18),
+              onPressed: _hasDrawing ? _capture : null,
+              tooltip: 'Capture',
+              color: _hasDrawing ? Colors.green : Colors.grey,
+            ),
+            // Visual indicator of capture state
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _hasDrawing ? Colors.orange : Colors.grey,
+              ),
+            ),
           ],
         ),
       ],
@@ -70,10 +112,18 @@ class _Painter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Fill background with white
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = Colors.white,
+    );
+
     final paint = Paint()
       ..color = Colors.black
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 3.0 // Thicker stroke for better recognition
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {
         canvas.drawLine(points[i]!, points[i + 1]!, paint);
