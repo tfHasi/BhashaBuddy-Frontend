@@ -6,3 +6,5 @@ pydantic==2.5.0
 uvicorn[standard]
 pillow
 python-multipart
+numpy tensorflow
+scikit-learn
