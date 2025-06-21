@@ -17,7 +17,7 @@ class CheckpointOverlay extends StatelessWidget {
   bool _isLevelUnlocked(int level) {
     if (levelsData != null) {
       return ProgressService.isLevelUnlocked(
-        levelsData!['levels'] ?? {}, 
+        levelsData!['unlocked_levels'] ?? {}, 
         level
       );
     } else {

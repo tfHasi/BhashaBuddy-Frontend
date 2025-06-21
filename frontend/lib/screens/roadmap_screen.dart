@@ -50,7 +50,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
   void _handleCheckpointTap(int levelIndex) {
     // Check if level is unlocked using ProgressService
     if (_levelsData != null && 
-        ProgressService.isLevelUnlocked(_levelsData!['levels'] ?? {}, levelIndex)) {
+        ProgressService.isLevelUnlocked(_levelsData!['unlocked_levels'] ?? {}, levelIndex)) {
       setState(() {
         _selectedLevel = levelIndex;
         _showOverlay = true;
