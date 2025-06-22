@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/task_service.dart';
 import './widgets/canvas_widget.dart';
+import './widgets/back_button.dart';
 
 class TaskScreen extends StatefulWidget {
   final int level;
@@ -27,7 +28,7 @@ class _TaskScreenState extends State<TaskScreen> {
     super.initState();
     _loadTasks();
     _flutterTts.setLanguage("en-US");
-    _flutterTts.setSpeechRate(0.2); // Adjust speed for kids
+    _flutterTts.setSpeechRate(0.3); // Adjust speed for kids
   }
 
   Future<void> _loadTasks() async {
@@ -142,74 +143,111 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final word = tasks![currentTaskIndex];
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Level ${widget.level}, Task ${currentTaskIndex + 1}')),
-      body: Column(
-        children: [
-          LinearProgressIndicator(value: (currentTaskIndex + 1) / tasks!.length),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.volume_up, size: 32),
-                        onPressed: _speakWord,
-                        tooltip: 'Listen to the word',
-                      ),
-                      const Text("Tap to hear"),
-                     ],
+return Scaffold(
+  body: SafeArea(
+    child: Column(
+      children: [
+        Expanded(
+          flex: 11,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/homescreen/background_image.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Container(color: const Color.fromARGB(59, 0, 0, 0)),
+              Positioned(
+                top: 20,
+                left: 16,
+                right: 16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    AnimatedBackButton(
+                      onTap: () => Navigator.pop(context),
                     ),
-                  Wrap(
-                    spacing: 20,
-                    children: List.generate(word.length, (i) {
-                      return Column(
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 80.0), // leave space for back button
+                child: Column(
+                  children: [
+                    LinearProgressIndicator(
+                      value: (currentTaskIndex + 1) / tasks!.length,
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Column(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.volume_up, size: 32),
+                                  onPressed: _speakWord,
+                                  tooltip: 'Listen to the word',
+                                ),
+                                const Text("Tap to hear"),
+                              ],
+                            ),
+                            Wrap(
+                              spacing: 20,
+                              children: List.generate(word.length, (i) {
+                                return Column(
+                                  children: [
+                                    const SizedBox(height: 8),
+                                    DrawableCanvas(
+                                      size: 64,
+                                      onCapture: (bytes) {
+                                        capturedImages[currentTaskIndex] ??=
+                                            List.filled(word.length, null);
+                                        capturedImages[currentTaskIndex]![i] = bytes;
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const SizedBox(height: 8),
-                          DrawableCanvas(
-                            size: 64,
-                            onCapture: (bytes) {
-                              capturedImages[currentTaskIndex] ??=
-                                  List.filled(word.length, null);
-                              capturedImages[currentTaskIndex]![i] = bytes;
-                            },
+                          ElevatedButton(
+                            onPressed: currentTaskIndex > 0
+                                ? () => _navigateTask(false)
+                                : null,
+                            child: const Text('Previous'),
+                          ),
+                          ElevatedButton(
+                            onPressed: _submitTask,
+                            child: const Text('Submit'),
+                          ),
+                          ElevatedButton(
+                            onPressed: currentTaskIndex < tasks!.length - 1
+                                ? () => _navigateTask(true)
+                                : null,
+                            child: const Text('Next'),
                           ),
                         ],
-                      );
-                    }),
-                  ),
-                ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: currentTaskIndex > 0
-                      ? () => _navigateTask(false)
-                      : null,
-                  child: const Text('Previous'),
-                ),
-                ElevatedButton(
-                  onPressed: _submitTask,
-                  child: const Text('Submit'),
-                ),
-                ElevatedButton(
-                  onPressed: currentTaskIndex < tasks!.length - 1
-                      ? () => _navigateTask(true)
-                      : null,
-                  child: const Text('Next'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  ),
+);
   }
 }
