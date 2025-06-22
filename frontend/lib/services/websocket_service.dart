@@ -4,7 +4,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
 class WebSocketService {
-  static const String baseUrl = 'wss://bhasha-buddy-tfhasi-ac9e9bc0.koyeb.app';
+  static const String baseUrl = 'ws://10.0.2.2:8000';
 
   WebSocketChannel? _scoreChannel;
   WebSocketChannel? _leaderboardChannel;
