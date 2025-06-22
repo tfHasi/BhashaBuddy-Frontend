@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../services/task_service.dart';
 import './widgets/canvas_widget.dart';
 
@@ -19,16 +20,25 @@ class _TaskScreenState extends State<TaskScreen> {
   List<String>? tasks;
   int currentTaskIndex = 0;
   final Map<int, List<Uint8List?>> capturedImages = {};
+  final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    _flutterTts.setLanguage("en-US");
+    _flutterTts.setSpeechRate(0.2); // Adjust speed for kids
   }
 
   Future<void> _loadTasks() async {
     final loaded = await TaskService.getTasksForLevel(widget.level);
     if (mounted) setState(() => tasks = loaded);
+  }
+  
+  Future<void> _speakWord() async {
+    final word = tasks![currentTaskIndex];
+    await _flutterTts.stop(); // stop any previous speech
+    await _flutterTts.speak(word);
   }
 
   void _navigateTask(bool forward) {
@@ -133,7 +143,7 @@ class _TaskScreenState extends State<TaskScreen> {
     final word = tasks![currentTaskIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('Level ${widget.level}')),
+      appBar: AppBar(title: Text('Level ${widget.level}, Task ${currentTaskIndex + 1}')),
       body: Column(
         children: [
           LinearProgressIndicator(value: (currentTaskIndex + 1) / tasks!.length),
@@ -142,15 +152,21 @@ class _TaskScreenState extends State<TaskScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Text(word.toUpperCase(),
-                      style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 20),
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.volume_up, size: 32),
+                        onPressed: _speakWord,
+                        tooltip: 'Listen to the word',
+                      ),
+                      const Text("Tap to hear"),
+                     ],
+                    ),
                   Wrap(
                     spacing: 20,
                     children: List.generate(word.length, (i) {
                       return Column(
                         children: [
-                          Text(word[i].toUpperCase()),
                           const SizedBox(height: 8),
                           DrawableCanvas(
                             size: 64,
