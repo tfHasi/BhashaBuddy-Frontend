@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/task_service.dart';
-import './widgets/canvas_widget.dart';
+import './widgets/canvas_overlay.dart';
 import './widgets/back_button.dart';
 
 class TaskScreen extends StatefulWidget {
@@ -35,10 +35,10 @@ class _TaskScreenState extends State<TaskScreen> {
     final loaded = await TaskService.getTasksForLevel(widget.level);
     if (mounted) setState(() => tasks = loaded);
   }
-  
+
   Future<void> _speakWord() async {
     final word = tasks![currentTaskIndex];
-    await _flutterTts.stop(); // stop any previous speech
+    await _flutterTts.stop();
     await _flutterTts.speak(word);
   }
 
@@ -135,6 +135,20 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 
+  void _openCanvasOverlay(int index) {
+    final word = tasks![currentTaskIndex];
+    showDialog(
+      context: context,
+      builder: (_) => CanvasOverlay(
+        onSave: (bytes) {
+          capturedImages[currentTaskIndex] ??= List.filled(word.length, null);
+          capturedImages[currentTaskIndex]![index] = bytes;
+          setState(() {});
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (tasks == null) {
@@ -143,47 +157,45 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final word = tasks![currentTaskIndex];
 
-return Scaffold(
-  body: SafeArea(
-    child: Column(
-      children: [
-        Expanded(
-          flex: 11,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/images/homescreen/background_image.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Container(color: const Color.fromARGB(59, 0, 0, 0)),
-              Positioned(
-                top: 20,
-                left: 16,
-                right: 16,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    AnimatedBackButton(
-                      onTap: () => Navigator.pop(context),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 11,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/homescreen/background_image.png',
+                      fit: BoxFit.cover,
                     ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 80.0), // leave space for back button
-                child: Column(
-                  children: [
-                    LinearProgressIndicator(
-                      value: (currentTaskIndex + 1) / tasks!.length,
+                  ),
+                  Container(color: const Color.fromARGB(59, 0, 0, 0)),
+                  Positioned(
+                    top: 20,
+                    left: 16,
+                    right: 16,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        AnimatedBackButton(
+                          onTap: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Column(
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 80.0),
+                    child: Column(
+                      children: [
+                        LinearProgressIndicator(
+                          value: (currentTaskIndex + 1) / tasks!.length,
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.volume_up, size: 32),
@@ -191,63 +203,65 @@ return Scaffold(
                                   tooltip: 'Listen to the word',
                                 ),
                                 const Text("Tap to hear"),
+                                const SizedBox(height: 16),
+                                Wrap(
+                                  spacing: 12,
+                                  children: List.generate(word.length, (i) {
+                                    final image = capturedImages[currentTaskIndex]?[i];
+
+                                    return GestureDetector(
+                                      onTap: () => _openCanvasOverlay(i),
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey),
+                                          color: Colors.white,
+                                        ),
+                                        child: image != null
+                                            ? Image.memory(image, fit: BoxFit.cover)
+                                            : const Icon(Icons.edit, size: 16, color: Colors.grey),
+                                      ),
+                                    );
+                                  }),
+                                ),
                               ],
                             ),
-                            Wrap(
-                              spacing: 20,
-                              children: List.generate(word.length, (i) {
-                                return Column(
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    DrawableCanvas(
-                                      size: 64,
-                                      onCapture: (bytes) {
-                                        capturedImages[currentTaskIndex] ??=
-                                            List.filled(word.length, null);
-                                        capturedImages[currentTaskIndex]![i] = bytes;
-                                      },
-                                    ),
-                                  ],
-                                );
-                              }),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ElevatedButton(
+                                onPressed: currentTaskIndex > 0
+                                    ? () => _navigateTask(false)
+                                    : null,
+                                child: const Text('Previous'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _submitTask,
+                                child: const Text('Submit'),
+                              ),
+                              ElevatedButton(
+                                onPressed: currentTaskIndex < tasks!.length - 1
+                                    ? () => _navigateTask(true)
+                                    : null,
+                                child: const Text('Next'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ElevatedButton(
-                            onPressed: currentTaskIndex > 0
-                                ? () => _navigateTask(false)
-                                : null,
-                            child: const Text('Previous'),
-                          ),
-                          ElevatedButton(
-                            onPressed: _submitTask,
-                            child: const Text('Submit'),
-                          ),
-                          ElevatedButton(
-                            onPressed: currentTaskIndex < tasks!.length - 1
-                                ? () => _navigateTask(true)
-                                : null,
-                            child: const Text('Next'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
 }
