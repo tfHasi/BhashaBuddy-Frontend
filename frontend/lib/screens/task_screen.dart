@@ -19,7 +19,7 @@ class TaskScreen extends StatefulWidget {
 
 class _TaskScreenState extends State<TaskScreen> {
   List<String>? tasks;
-  int currentTaskIndex = 0;
+  int currentTabIndex = 0;
   final Map<int, List<Uint8List?>> capturedImages = {};
   final FlutterTts _flutterTts = FlutterTts();
 
@@ -28,7 +28,7 @@ class _TaskScreenState extends State<TaskScreen> {
     super.initState();
     _loadTasks();
     _flutterTts.setLanguage("en-US");
-    _flutterTts.setSpeechRate(0.3); // Adjust speed for kids
+    _flutterTts.setSpeechRate(0.3);
   }
 
   Future<void> _loadTasks() async {
@@ -37,21 +37,17 @@ class _TaskScreenState extends State<TaskScreen> {
   }
 
   Future<void> _speakWord() async {
-    final word = tasks![currentTaskIndex];
+    if (tasks == null || tasks!.isEmpty) return;
+    final word = tasks![currentTabIndex];
     await _flutterTts.stop();
     await _flutterTts.speak(word);
   }
 
-  void _navigateTask(bool forward) {
-    setState(() {
-      if (forward && currentTaskIndex < (tasks!.length - 1)) currentTaskIndex++;
-      if (!forward && currentTaskIndex > 0) currentTaskIndex--;
-    });
-  }
-
   Future<void> _submitTask() async {
-    final word = tasks![currentTaskIndex];
-    final images = capturedImages[currentTaskIndex] ?? [];
+    if (tasks == null || tasks!.isEmpty) return;
+    
+    final word = tasks![currentTabIndex];
+    final images = capturedImages[currentTabIndex] ?? [];
 
     if (images.length != word.length || images.contains(null)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,20 +56,7 @@ class _TaskScreenState extends State<TaskScreen> {
       return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Analyzing your drawings...'),
-          ],
-        ),
-      ),
-    );
+    _showLoadingDialog();
 
     try {
       final dir = await getTemporaryDirectory();
@@ -86,7 +69,7 @@ class _TaskScreenState extends State<TaskScreen> {
       final result = await TaskService.predictTask(
         studentUid: widget.user['uid'],
         levelId: widget.level,
-        taskId: currentTaskIndex,
+        taskId: currentTabIndex,
         images: files,
       );
 
@@ -107,6 +90,23 @@ class _TaskScreenState extends State<TaskScreen> {
         );
       }
     }
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Analyzing your drawings...'),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showResultDialog({
@@ -135,16 +135,142 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 
-  void _openCanvasOverlay(int index) {
-    final word = tasks![currentTaskIndex];
+  void _openCanvasOverlay(int charIndex) {
+    if (tasks == null) return;
+    
+    final word = tasks![currentTabIndex];
     showDialog(
       context: context,
       builder: (_) => CanvasOverlay(
         onSave: (bytes) {
-          capturedImages[currentTaskIndex] ??= List.filled(word.length, null);
-          capturedImages[currentTaskIndex]![index] = bytes;
+          capturedImages[currentTabIndex] ??= List.filled(word.length, null);
+          capturedImages[currentTabIndex]![charIndex] = bytes;
           setState(() {});
         },
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    if (tasks == null) return const SizedBox.shrink();
+    
+    final tabCount = tasks!.length > 3 ? 3 : tasks!.length;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: List.generate(tabCount, (index) {
+          final isSelected = index == currentTabIndex;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => currentTabIndex = index),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Task ${index + 1}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildTaskContent() {
+    if (tasks == null || currentTabIndex >= tasks!.length) {
+      return const Center(child: Text('No task available'));
+    }
+
+    final word = tasks![currentTabIndex];
+    
+    return Expanded(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // TTS Button
+            Column(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.volume_up, size: 40, color: Colors.blue),
+                  onPressed: _speakWord,
+                  tooltip: 'Listen to the word',
+                ),
+                const Text(
+                  "Tap to hear",
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Drawing Boxes
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: List.generate(word.length, (i) {
+                final image = capturedImages[currentTabIndex]?[i];
+                
+                return GestureDetector(
+                  onTap: () => _openCanvasOverlay(i),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white,
+                    ),
+                    child: image != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.memory(image, fit: BoxFit.cover),
+                          )
+                        : const Icon(Icons.edit, size: 24, color: Colors.grey),
+                  ),
+                );
+              }),
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitTask,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -152,116 +278,74 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     if (tasks == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
-
-    final word = tasks![currentTaskIndex];
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              flex: 11,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      'assets/images/homescreen/background_image.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Container(color: const Color.fromARGB(59, 0, 0, 0)),
-                  Positioned(
-                    top: 20,
-                    left: 16,
-                    right: 16,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        AnimatedBackButton(
-                          onTap: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 80.0),
-                    child: Column(
-                      children: [
-                        LinearProgressIndicator(
-                          value: (currentTaskIndex + 1) / tasks!.length,
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.volume_up, size: 32),
-                                  onPressed: _speakWord,
-                                  tooltip: 'Listen to the word',
-                                ),
-                                const Text("Tap to hear"),
-                                const SizedBox(height: 16),
-                                Wrap(
-                                  spacing: 12,
-                                  children: List.generate(word.length, (i) {
-                                    final image = capturedImages[currentTaskIndex]?[i];
-
-                                    return GestureDetector(
-                                      onTap: () => _openCanvasOverlay(i),
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.grey),
-                                          color: Colors.white,
-                                        ),
-                                        child: image != null
-                                            ? Image.memory(image, fit: BoxFit.cover)
-                                            : const Icon(Icons.edit, size: 16, color: Colors.grey),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ElevatedButton(
-                                onPressed: currentTaskIndex > 0
-                                    ? () => _navigateTask(false)
-                                    : null,
-                                child: const Text('Previous'),
-                              ),
-                              ElevatedButton(
-                                onPressed: _submitTask,
-                                child: const Text('Submit'),
-                              ),
-                              ElevatedButton(
-                                onPressed: currentTaskIndex < tasks!.length - 1
-                                    ? () => _navigateTask(true)
-                                    : null,
-                                child: const Text('Next'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            // Background
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/homescreen/background_image.png',
+                fit: BoxFit.cover,
               ),
+            ),
+            Container(color: const Color.fromARGB(59, 0, 0, 0)),
+            
+            // Content
+            Column(
+              children: [
+                // Header with Back Button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      AnimatedBackButton(
+                        onTap: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Level Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Level ${widget.level}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Tab Bar
+                _buildTabBar(),
+                
+                // Task Content
+                _buildTaskContent(),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
   }
 }
