@@ -18,7 +18,7 @@ class TaskScreen extends StatefulWidget {
 class _TaskScreenState extends State<TaskScreen> {
   List<String>? tasks;
   int currentTaskIndex = 0;
-  Map<int, List<Uint8List?>> capturedImages = {};
+  final Map<int, List<Uint8List?>> capturedImages = {};
 
   @override
   void initState() {
@@ -31,23 +31,18 @@ class _TaskScreenState extends State<TaskScreen> {
     if (mounted) setState(() => tasks = loaded);
   }
 
-  void _nextTask() {
-    if (currentTaskIndex < (tasks?.length ?? 0) - 1) {
-      setState(() => currentTaskIndex++);
-    }
-  }
-
-  void _previousTask() {
-    if (currentTaskIndex > 0) {
-      setState(() => currentTaskIndex--);
-    }
+  void _navigateTask(bool forward) {
+    setState(() {
+      if (forward && currentTaskIndex < (tasks!.length - 1)) currentTaskIndex++;
+      if (!forward && currentTaskIndex > 0) currentTaskIndex--;
+    });
   }
 
   Future<void> _submitTask() async {
-    final word = tasks?[currentTaskIndex] ?? '';
+    final word = tasks![currentTaskIndex];
     final images = capturedImages[currentTaskIndex] ?? [];
 
-    if (images.length != word.length || images.any((img) => img == null)) {
+    if (images.length != word.length || images.contains(null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please draw all characters')),
       );
@@ -71,13 +66,11 @@ class _TaskScreenState extends State<TaskScreen> {
 
     try {
       final dir = await getTemporaryDirectory();
-      final files = await Future.wait(
-        images.asMap().entries.map((e) async {
-          final file = File('${dir.path}/char_${e.key}.png');
-          await file.writeAsBytes(e.value!);
-          return file;
-        }),
-      );
+      final files = await Future.wait(images.asMap().entries.map((e) async {
+        final file = File('${dir.path}/char_${e.key}.png');
+        await file.writeAsBytes(e.value!);
+        return file;
+      }));
 
       final result = await TaskService.predictTask(
         studentUid: widget.user['uid'],
@@ -86,7 +79,7 @@ class _TaskScreenState extends State<TaskScreen> {
         images: files,
       );
 
-      Navigator.of(context).pop(); // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
 
       if (result != null) {
         _showResultDialog(
@@ -96,10 +89,12 @@ class _TaskScreenState extends State<TaskScreen> {
         );
       }
     } catch (e) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -132,9 +127,7 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     if (tasks == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final word = tasks![currentTaskIndex];
@@ -143,33 +136,33 @@ class _TaskScreenState extends State<TaskScreen> {
       appBar: AppBar(title: Text('Level ${widget.level}')),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: (currentTaskIndex + 1) / tasks!.length,
-          ),
+          LinearProgressIndicator(value: (currentTaskIndex + 1) / tasks!.length),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Text(word.toUpperCase(),
-                    style: Theme.of(context).textTheme.headlineMedium),
+                      style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: 20),
                   Wrap(
                     spacing: 20,
-                    children: List.generate(word.length, (i) => Column(
-                      children: [
-                        Text(word[i].toUpperCase()),
-                        const SizedBox(height: 8),
-                        DrawableCanvas(
-                          size: 100,
-                          onCapture: (bytes) {
-                            capturedImages[currentTaskIndex] ??= 
-                              List.filled(word.length, null);
-                            capturedImages[currentTaskIndex]![i] = bytes;
-                          },
-                        ),
-                      ],
-                    )),
+                    children: List.generate(word.length, (i) {
+                      return Column(
+                        children: [
+                          Text(word[i].toUpperCase()),
+                          const SizedBox(height: 8),
+                          DrawableCanvas(
+                            size: 64,
+                            onCapture: (bytes) {
+                              capturedImages[currentTaskIndex] ??=
+                                  List.filled(word.length, null);
+                              capturedImages[currentTaskIndex]![i] = bytes;
+                            },
+                          ),
+                        ],
+                      );
+                    }),
                   ),
                 ],
               ),
@@ -181,7 +174,9 @@ class _TaskScreenState extends State<TaskScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
-                  onPressed: _previousTask,
+                  onPressed: currentTaskIndex > 0
+                      ? () => _navigateTask(false)
+                      : null,
                   child: const Text('Previous'),
                 ),
                 ElevatedButton(
@@ -189,7 +184,9 @@ class _TaskScreenState extends State<TaskScreen> {
                   child: const Text('Submit'),
                 ),
                 ElevatedButton(
-                  onPressed: _nextTask,
+                  onPressed: currentTaskIndex < tasks!.length - 1
+                      ? () => _navigateTask(true)
+                      : null,
                   child: const Text('Next'),
                 ),
               ],

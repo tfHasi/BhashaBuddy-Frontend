@@ -41,11 +41,11 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
   Future<void> _capture() async {
     final boundary = _key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary != null) {
-      // Capture at higher resolution for better ML model input
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData != null) {
         widget.onCapture(byteData.buffer.asUint8List());
+        setState(() => _hasDrawing = false);
       }
     }
   }
@@ -58,7 +58,7 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(4),
-            color: Colors.white, // White background for ML model
+            color: Colors.white,
           ),
           child: RepaintBoundary(
             key: _key,
@@ -66,7 +66,7 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
               onPanUpdate: (details) => _addPoint(details.localPosition),
               onPanEnd: (_) => _endStroke(),
               child: CustomPaint(
-                painter: _Painter(_points),
+                painter: _CanvasPainter(_points),
                 child: SizedBox(
                   width: widget.size,
                   height: widget.size,
@@ -90,7 +90,6 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
               tooltip: 'Capture',
               color: _hasDrawing ? Colors.green : Colors.grey,
             ),
-            // Visual indicator of capture state
             Container(
               width: 8,
               height: 8,
@@ -106,13 +105,13 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
   }
 }
 
-class _Painter extends CustomPainter {
+class _CanvasPainter extends CustomPainter {
   final List<Offset?> points;
-  _Painter(this.points);
+
+  _CanvasPainter(this.points);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill background with white
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = Colors.white,
@@ -120,7 +119,7 @@ class _Painter extends CustomPainter {
 
     final paint = Paint()
       ..color = Colors.black
-      ..strokeWidth = 3.0 // Thicker stroke for better recognition
+      ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
