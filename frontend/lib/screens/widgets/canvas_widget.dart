@@ -18,34 +18,30 @@ class DrawableCanvas extends StatefulWidget {
 }
 
 class _DrawableCanvasState extends State<DrawableCanvas> {
-  final List<Offset?> _points = [];
-  final GlobalKey _key = GlobalKey();
-  bool _hasDrawing = false;
+  final List<Offset?> points = [];
+  final GlobalKey key = GlobalKey();
+  bool hasDrawing = false;
 
   void _addPoint(Offset point) {
     setState(() {
-      _points.add(point);
-      _hasDrawing = true;
+      points.add(point);
+      hasDrawing = true;
     });
   }
 
-  void _endStroke() => setState(() => _points.add(null));
-
-  void _clear() {
-    setState(() {
-      _points.clear();
-      _hasDrawing = false;
-    });
-  }
+  void _clear() => setState(() {
+    points.clear();
+    hasDrawing = false;
+  });
 
   Future<void> _capture() async {
-    final boundary = _key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary != null) {
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData != null) {
         widget.onCapture(byteData.buffer.asUint8List());
-        setState(() => _hasDrawing = false);
+        setState(() => hasDrawing = false);
       }
     }
   }
@@ -53,6 +49,7 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           decoration: BoxDecoration(
@@ -61,12 +58,12 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
             color: Colors.white,
           ),
           child: RepaintBoundary(
-            key: _key,
+            key: key,
             child: GestureDetector(
               onPanUpdate: (details) => _addPoint(details.localPosition),
-              onPanEnd: (_) => _endStroke(),
+              onPanEnd: (_) => setState(() => points.add(null)),
               child: CustomPaint(
-                painter: _CanvasPainter(_points),
+                painter: _CanvasPainter(points),
                 child: SizedBox(
                   width: widget.size,
                   height: widget.size,
@@ -75,7 +72,7 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -86,16 +83,16 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
             ),
             IconButton(
               icon: const Icon(Icons.check, size: 18),
-              onPressed: _hasDrawing ? _capture : null,
+              onPressed: hasDrawing ? _capture : null,
               tooltip: 'Capture',
-              color: _hasDrawing ? Colors.green : Colors.grey,
+              color: hasDrawing ? Colors.green : Colors.grey,
             ),
             Container(
               width: 8,
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _hasDrawing ? Colors.orange : Colors.grey,
+                color: hasDrawing ? Colors.orange : Colors.grey,
               ),
             ),
           ],
@@ -107,7 +104,6 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
 
 class _CanvasPainter extends CustomPainter {
   final List<Offset?> points;
-
   _CanvasPainter(this.points);
 
   @override
