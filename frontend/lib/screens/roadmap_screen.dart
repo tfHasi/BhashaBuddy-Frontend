@@ -7,7 +7,6 @@ import './widgets/level_overlay.dart';
 import '../services/progress_service.dart';
 import './task_screen.dart';
 
-
 class RoadMapScreen extends StatefulWidget {
   final Map<String, dynamic> user;
   const RoadMapScreen({super.key, required this.user});
@@ -27,6 +26,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
     super.initState();
     _loadProgressData();
   }
+
   // Load progress data when screen initializes
   Future<void> _loadProgressData() async {
     final studentUid = widget.user['uid']?.toString();
@@ -64,18 +64,24 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
     });
   }
 
-void _startLevel() {
-  _closeOverlay();
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => TaskScreen(
-        level: _selectedLevel,
-        user: widget.user,
+  void _startLevel() async {
+    _closeOverlay();
+    
+    // Navigate to TaskScreen and wait for result
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TaskScreen(
+          level: _selectedLevel,
+          user: widget.user,
+        ),
       ),
-    ),
-  );
-}
+    );
+    
+    // Refresh progress data when returning from TaskScreen
+    _loadProgressData();
+  }
+
   // ProgressService helper methods
   Map<int, int> _calculateLevelStars() {
     if (_progressData == null) {
@@ -89,6 +95,7 @@ void _startLevel() {
 
     return levelStars;
   }
+
   // Get total stars using ProgressService
   int _getTotalStars() {
     return _progressData != null 
