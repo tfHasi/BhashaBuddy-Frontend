@@ -158,28 +158,34 @@ class _TaskScreenState extends State<TaskScreen> {
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
       child: Row(
         children: List.generate(tabCount, (index) {
           final isSelected = index == currentTabIndex;
+          final isFirst = index == 0;
+          final isLast = index == tabCount - 1;
+          
           return Expanded(
             child: GestureDetector(
               onTap: () => setState(() => currentTabIndex = index),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.blue : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  color: isSelected ? const Color(0xFF4A9EFF) : const Color(0xFFE8E8E8),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(isFirst ? 8 : 0),
+                    topRight: Radius.circular(isLast ? 8 : 0),
+                  ),
+                  border: Border(
+                    left: isFirst ? BorderSide.none : const BorderSide(color: Colors.white, width: 1),
+                  ),
                 ),
                 child: Text(
                   'Task ${index + 1}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : const Color(0xFF666666),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -198,78 +204,132 @@ class _TaskScreenState extends State<TaskScreen> {
     final word = tasks![currentTabIndex];
     
     return Expanded(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // TTS Button
-            Column(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.volume_up, size: 40, color: Colors.blue),
-                  onPressed: _speakWord,
-                  tooltip: 'Listen to the word',
-                ),
-                const Text(
-                  "Tap to hear",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Drawing Boxes
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              alignment: WrapAlignment.center,
-              children: List.generate(word.length, (i) {
-                final image = capturedImages[currentTabIndex]?[i];
-                
-                return GestureDetector(
-                  onTap: () => _openCanvasOverlay(i),
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white,
-                    ),
-                    child: image != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Image.memory(image, fit: BoxFit.cover),
-                          )
-                        : const Icon(Icons.edit, size: 24, color: Colors.grey),
-                  ),
-                );
-              }),
-            ),
-            
-            const SizedBox(height: 40),
-            
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitTask,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(0),
+            topRight: Radius.circular(0),
+            bottomLeft: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              // TTS Button
+              Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4A9EFF),
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4A9EFF).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.volume_up, size: 32, color: Colors.white),
+                      onPressed: _speakWord,
+                      tooltip: 'Listen to the word',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Tap to hear",
+                    style: TextStyle(
+                      fontSize: 14, 
+                      color: Color(0xFF666666),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Drawing Boxes
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                alignment: WrapAlignment.center,
+                children: List.generate(word.length, (i) {
+                  final image = capturedImages[currentTabIndex]?[i];
+                  
+                  return GestureDetector(
+                    onTap: () => _openCanvasOverlay(i),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFFFAFAFA),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: image != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.memory(image, fit: BoxFit.cover),
+                            )
+                          : const Icon(
+                              Icons.edit, 
+                              size: 28, 
+                              color: Color(0xFFBBBBBB),
+                            ),
+                    ),
+                  );
+                }),
+              ),
+              
+              const SizedBox(height: 40),
+              
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitTask,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF28A745),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                    shadowColor: const Color(0xFF28A745).withOpacity(0.3),
+                  ),
+                  child: const Text(
+                    'Submit',
+                    style: TextStyle(
+                      fontSize: 16, 
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
