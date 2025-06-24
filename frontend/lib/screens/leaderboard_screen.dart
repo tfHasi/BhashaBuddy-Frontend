@@ -240,16 +240,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     required int totalStars,
     required bool isCurrentUser,
   }) {
-    Color rankColor = Colors.white70;
+
+    Color rankColor = Color.fromARGB(255, 226, 224, 224);
     Widget rankWidget = Text(
       '$rank',
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: rankColor,
-      ),
     );
-
     // Special styling for top 3
     if (rank == 1) {
       rankColor = const Color(0xFFFFD700); // Gold
@@ -327,7 +322,34 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color.fromARGB(255, 100, 100, 100),
+            ),
+          ),
+        ),
+      );
+    }
+    else {
+      rankWidget = Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: rankColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: rankColor.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            '$rank',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 100, 100, 100),
             ),
           ),
         ),
