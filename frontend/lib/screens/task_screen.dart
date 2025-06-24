@@ -6,6 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../services/task_service.dart';
 import './widgets/canvas_overlay.dart';
 import './widgets/back_button.dart';
+import './widgets/speak_buttons.dart';
 
 class TaskScreen extends StatefulWidget {
   final int level;
@@ -19,6 +20,7 @@ class TaskScreen extends StatefulWidget {
 
 class _TaskScreenState extends State<TaskScreen> {
   List<String>? tasks;
+  List<String>? translations;
   int currentTab = 0;
   final Map<int, List<Uint8List?>> images = {};
   final FlutterTts tts = FlutterTts();
@@ -26,20 +28,21 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadLevelData();
     tts.setLanguage("en-US");
     tts.setSpeechRate(0.3);
   }
 
-  Future<void> _loadTasks() async {
-    final loaded = await TaskService.getTasksForLevel(widget.level);
-    if (mounted) setState(() => tasks = loaded);
-  }
-
-  Future<void> _speak() async {
-    if (tasks?.isNotEmpty == true) {
-      await tts.stop();
-      await tts.speak(tasks![currentTab]);
+  Future<void> _loadLevelData() async {
+    // Load complete level data (tasks + translations)
+    final levelData = await TaskService.getLevelData(widget.level);
+    if (mounted && levelData != null) {
+      setState(() {
+        tasks = List<String>.from(levelData['tasks'] ?? []);
+        translations = levelData.containsKey('translations') 
+            ? List<String>.from(levelData['translations']) 
+            : null;
+      });
     }
   }
 
@@ -137,6 +140,9 @@ class _TaskScreenState extends State<TaskScreen> {
     }
 
     final word = tasks!.isNotEmpty ? tasks![currentTab] : '';
+    final translation = translations != null && translations!.length > currentTab 
+        ? translations![currentTab] 
+        : null;
     final taskImages = images[currentTab] ?? [];
 
     return Scaffold(
@@ -179,23 +185,11 @@ class _TaskScreenState extends State<TaskScreen> {
                     ),
                     child: Column(
                       children: [
-                        // TTS Button
-                        Column(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF4A9EFF),
-                                shape: BoxShape.circle,
-                                boxShadow: [BoxShadow(color: const Color(0xFF4A9EFF).withOpacity(0.3), blurRadius: 8)],
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.volume_up, size: 32, color: Colors.white),
-                                onPressed: _speak,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text('Tap to hear', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-                          ],
+                        // Speak Buttons
+                        SpeakButtons(
+                          englishWord: word,
+                          sinhalaWord: translation,
+                          tts: tts,
                         ),
                         
                         const SizedBox(height: 32),
