@@ -225,19 +225,29 @@ class _TaskScreenState extends State<TaskScreen> {
                         const Spacer(),
                         
                         // Submit button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        GestureDetector(
+                          onTap: _submit,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage('assets/images/blue_button_rectangle_gradient.png'),
+                                fit: BoxFit.fill,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                ),
+                              alignment: Alignment.center,
+                          child: const Text(
+                            'Submit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
                             ),
-                            child: const Text('Submit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           ),
                         ),
+                      ),
                       ],
                     ),
                   ),
