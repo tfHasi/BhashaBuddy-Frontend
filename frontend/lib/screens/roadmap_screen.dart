@@ -20,6 +20,9 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
   Map<String, dynamic>? _progressData;
   Map<String, dynamic>? _levelsData;
   bool _isLoading = true;
+  
+  // Add a key to force ScoreWidget rebuild
+  Key _scoreWidgetKey = UniqueKey();
 
   @override
   void initState() {
@@ -38,6 +41,8 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
         _progressData = progress;
         _levelsData = levels;
         _isLoading = false;
+        // Generate new key to force ScoreWidget rebuild with fresh data
+        _scoreWidgetKey = UniqueKey();
       });
     } catch (e) {
       print('Error loading progress data: $e');
@@ -68,7 +73,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
     _closeOverlay();
     
     // Navigate to TaskScreen and wait for result
-    await Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TaskScreen(
@@ -77,9 +82,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
         ),
       ),
     );
-    
-    // Refresh progress data when returning from TaskScreen
-    _loadProgressData();
+    await _loadProgressData();
   }
 
   // ProgressService helper methods
@@ -146,6 +149,7 @@ class _RoadMapScreenState extends State<RoadMapScreen> {
                         ),
                         if (user['type'] == 'student')
                           ScoreWidget(
+                            key: _scoreWidgetKey, // Use the key to force rebuild
                             userId: user['uid']?.toString() ?? '',
                             nickname: user['nickname']?.toString() ?? 'User',
                             initialStars: _getTotalStars(),
