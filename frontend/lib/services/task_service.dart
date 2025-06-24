@@ -35,6 +35,60 @@ class TaskService {
     }
   }
 
+  // Fetch translations for a given level
+  static Future<List<String>?> getTranslationsForLevel(int levelId) async {
+    if (levelId < 1 || levelId > 6) {
+      print('⚠️ Invalid level ID: $levelId');
+      return null;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/levels/$levelId/translations'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return List<String>.from(body['translations'] ?? []);
+      } else {
+        print('❌ Failed to fetch translations: ${response.statusCode}');
+        print(response.body);
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error fetching translations: $e');
+      return null;
+    }
+  }
+
+  // Fetch complete level data (tasks + translations)
+  static Future<Map<String, dynamic>?> getLevelData(int levelId) async {
+    if (levelId < 1 || levelId > 6) {
+      print('⚠️ Invalid level ID: $levelId');
+      return null;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/levels/$levelId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body;
+      } else {
+        print('❌ Failed to fetch level data: ${response.statusCode}');
+        print(response.body);
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error fetching level data: $e');
+      return null;
+    }
+  }
+
   // Submit drawn characters for prediction
   static Future<Map<String, dynamic>?> predictTask({
     required String studentUid,
