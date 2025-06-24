@@ -8,18 +8,18 @@ class ScoreWidget extends StatefulWidget {
   final int initialStars;
 
   const ScoreWidget({
-    Key? key,
+    super.key,
     required this.userId,
     required this.nickname,
     this.initialStars = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<ScoreWidget> createState() => _ScoreWidgetState();
 }
 
 class _ScoreWidgetState extends State<ScoreWidget> {
-  late WebSocketService _webSocketService;
+  late final WebSocketService _webSocketService;
   StreamSubscription<Map<String, dynamic>>? _scoreSubscription;
   int _totalStars = 0;
 
@@ -28,30 +28,33 @@ class _ScoreWidgetState extends State<ScoreWidget> {
     super.initState();
     _totalStars = widget.initialStars;
     _webSocketService = WebSocketService();
-    _connectToWebSocket();
-  }
 
-  void _connectToWebSocket() async {
-    try {
-      await _webSocketService.connectToScoreUpdates();
+    _webSocketService.connectToScoreUpdates().then((_) {
       _scoreSubscription = _webSocketService.scoreUpdates.listen((data) {
         final userId = data['user_id']?.toString();
-        // Match with Firebase UID
         if (userId == widget.userId) {
           setState(() {
             _totalStars = data['total_stars'] ?? _totalStars;
           });
         }
       });
-    } catch (e) {
-      print('Failed to connect to WebSocket: $e');
+    });
+  }
+
+  @override
+  void didUpdateWidget(ScoreWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update the score if initialStars changed (when parent refreshes data)
+    if (oldWidget.initialStars != widget.initialStars) {
+      setState(() {
+        _totalStars = widget.initialStars;
+      });
     }
   }
 
   @override
   void dispose() {
     _scoreSubscription?.cancel();
-    _webSocketService.dispose();
     super.dispose();
   }
 
@@ -77,10 +80,10 @@ class _ScoreWidgetState extends State<ScoreWidget> {
           SizedBox(width: 8),
           Text(
             '$_totalStars',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 255, 255, 255),
+              color: Color.fromARGB(255, 255, 255, 255),
             ),
           ),
         ],

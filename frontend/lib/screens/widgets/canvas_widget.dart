@@ -18,41 +18,55 @@ class DrawableCanvas extends StatefulWidget {
 }
 
 class _DrawableCanvasState extends State<DrawableCanvas> {
-  final List<Offset?> _points = [];
-  final GlobalKey _key = GlobalKey();
-  bool _hasDrawing = false;
+  final List<Offset?> points = [];
+  final GlobalKey key = GlobalKey();
+  bool hasDrawing = false;
+  
+  // Scale factor for better drawing experience
+  static const double scaleFactor = 4.0;
 
   void _addPoint(Offset point) {
     setState(() {
-      _points.add(point);
-      _hasDrawing = true;
+      points.add(point);
+      hasDrawing = true;
     });
   }
 
-  void _endStroke() => setState(() => _points.add(null));
-
-  void _clear() {
-    setState(() {
-      _points.clear();
-      _hasDrawing = false;
-    });
-  }
+  void _clear() => setState(() {
+    points.clear();
+    hasDrawing = false;
+  });
 
   Future<void> _capture() async {
-    final boundary = _key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
     if (boundary != null) {
-      final image = await boundary.toImage(pixelRatio: 2.0);
+      // Capture at scale factor then resize to exact target size
+      final image = await boundary.toImage(pixelRatio: scaleFactor);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData != null) {
-        widget.onCapture(byteData.buffer.asUint8List());
-        setState(() => _hasDrawing = false);
+        // Resize to exact target size
+        final codec = await ui.instantiateImageCodec(
+          byteData.buffer.asUint8List(),
+          targetWidth: widget.size.toInt(),
+          targetHeight: widget.size.toInt(),
+        );
+        final frame = await codec.getNextFrame();
+        final resizedByteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+        
+        if (resizedByteData != null) {
+          widget.onCapture(resizedByteData.buffer.asUint8List());
+          setState(() => hasDrawing = false);
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final displaySize = widget.size * scaleFactor;
+    
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           decoration: BoxDecoration(
@@ -61,21 +75,21 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
             color: Colors.white,
           ),
           child: RepaintBoundary(
-            key: _key,
+            key: key,
             child: GestureDetector(
               onPanUpdate: (details) => _addPoint(details.localPosition),
-              onPanEnd: (_) => _endStroke(),
+              onPanEnd: (_) => setState(() => points.add(null)),
               child: CustomPaint(
-                painter: _CanvasPainter(_points),
+                painter: _CanvasPainter(points),
                 child: SizedBox(
-                  width: widget.size,
-                  height: widget.size,
+                  width: displaySize,
+                  height: displaySize,
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -86,16 +100,16 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
             ),
             IconButton(
               icon: const Icon(Icons.check, size: 18),
-              onPressed: _hasDrawing ? _capture : null,
+              onPressed: hasDrawing ? _capture : null,
               tooltip: 'Capture',
-              color: _hasDrawing ? Colors.green : Colors.grey,
+              color: hasDrawing ? Colors.green : Colors.grey,
             ),
             Container(
               width: 8,
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _hasDrawing ? Colors.orange : Colors.grey,
+                color: hasDrawing ? Colors.orange : Colors.grey,
               ),
             ),
           ],
@@ -107,7 +121,6 @@ class _DrawableCanvasState extends State<DrawableCanvas> {
 
 class _CanvasPainter extends CustomPainter {
   final List<Offset?> points;
-
   _CanvasPainter(this.points);
 
   @override
@@ -119,7 +132,7 @@ class _CanvasPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = Colors.black
-      ..strokeWidth = 3.0
+      ..strokeWidth = 12.0
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 

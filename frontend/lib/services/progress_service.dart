@@ -79,6 +79,29 @@ class ProgressService {
     }
   }
 
+  // Get leaderboard data
+  static Future<List<dynamic>?> getLeaderboard() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/leaderboard'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['leaderboard'] ?? data; // Handle different response formats
+      } else {
+        print('Failed to get leaderboard: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error getting leaderboard: $e');
+      return null;
+    }
+  }
+
   // Helper method to check if a level is unlocked
   static bool isLevelUnlocked(Map<String, dynamic> levels, int levelId) {
     if (levelId == 1) return true; // Level 1 always unlocked

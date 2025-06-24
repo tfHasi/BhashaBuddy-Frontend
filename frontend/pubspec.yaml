@@ -104,6 +104,7 @@ flutter:
     - assets/images/homescreen/
     - assets/fonts/
     - assets/images/LevelOverlay/
+    - assets/images/taskscreen/
   
   fonts:
     - family: Fredoka
