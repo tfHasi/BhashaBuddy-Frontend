@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:convert';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import '../services/dashboard_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-
   const DashboardScreen({super.key, required this.user});
 
   @override
@@ -15,151 +12,84 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final AuthService _authService = AuthService();
+  final _authService = AuthService();
   Map<String, dynamic> stats = {};
   List<dynamic> students = [];
   Map<String, dynamic> levels = {};
   bool isLoading = true;
   int selectedTab = 0;
 
-  final String baseUrl = dotenv.env['BASE_URL']!;
-
   @override
   void initState() {
     super.initState();
-    loadDashboardData();
+    _loadData();
   }
 
-  Future<void> loadDashboardData() async {
+  Future<void> _loadData() async {
     setState(() => isLoading = true);
     try {
-      await Future.wait([
-        loadStats(),
-        loadStudents(),
-        loadLevels(),
+      final results = await Future.wait([
+        AdminService.getStats(),
+        AdminService.getStudents(),
+        AdminService.getLevels(),
       ]);
+      setState(() {
+        stats = results[0];
+        students = results[1]['students'] ?? [];
+        levels = results[2]['levels'] ?? {};
+      });
     } catch (e) {
-      _showError('Failed to load dashboard data: $e');
+      _showSnackBar('Failed to load data: $e', isError: true);
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  Future<void> loadStats() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/admin/stats'));
-      if (response.statusCode == 200) {
-        setState(() {
-          stats = json.decode(response.body);
-        });
-      }
-    } catch (e) {
-      print('Error loading stats: $e');
-    }
-  }
-
-  Future<void> loadStudents() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/admin/students'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          students = data['students'] ?? [];
-        });
-      }
-    } catch (e) {
-      print('Error loading students: $e');
-    }
-  }
-
-  Future<void> loadLevels() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/admin/levels'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          levels = data['levels'] ?? {};
-        });
-      }
-    } catch (e) {
-      print('Error loading levels: $e');
-    }
-  }
-
-  Future<void> deleteStudent(String uid, String nickname) async {
-    final confirmed = await _showConfirmDialog(
-      'Delete Student',
-      'Are you sure you want to delete $nickname? This action cannot be undone.',
-    );
-    
-    if (confirmed) {
+  Future<void> _deleteStudent(String uid, String nickname) async {
+    if (await _showConfirmDialog('Delete $nickname?')) {
       try {
-        final response = await http.delete(
-          Uri.parse('$baseUrl/admin/students/$uid'),
-        );
-        if (response.statusCode == 200) {
-          _showSuccess('Student deleted successfully');
-          loadStudents();
+        if (await AdminService.deleteStudent(uid)) {
+          _showSnackBar('Student deleted successfully');
+          _loadData();
         } else {
-          _showError('Failed to delete student');
+          _showSnackBar('Failed to delete student', isError: true);
         }
       } catch (e) {
-        _showError('Error deleting student: $e');
+        _showSnackBar('Error: $e', isError: true);
       }
     }
   }
 
-  Future<void> updateLevel(String levelId, List<String> tasks, List<String> translations) async {
+  Future<void> _updateLevel(String levelId, List<String> tasks, List<String> translations) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/admin/levels/$levelId'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'tasks': tasks,
-          'translations': translations,
-        }),
-      );
-      
-      if (response.statusCode == 200) {
-        _showSuccess('Level updated successfully');
-        loadLevels(); // Refresh levels
+      if (await AdminService.updateLevel(levelId, tasks, translations)) {
+        _showSnackBar('Level updated successfully');
+        _loadData();
       } else {
-        _showError('Failed to update level');
+        _showSnackBar('Failed to update level', isError: true);
       }
     } catch (e) {
-      _showError('Error updating level: $e');
+      _showSnackBar('Error: $e', isError: true);
     }
   }
 
-  void _showError(String message) {
+  void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: isError ? Colors.red : Colors.green,
       ),
     );
   }
 
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  Future<bool> _showConfirmDialog(String title, String content) async {
+  Future<bool> _showConfirmDialog(String message) async {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
+        title: const Text('Confirm'),
+        content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -170,68 +100,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ) ?? false;
   }
 
-  void _showEditLevelDialog(String levelId, Map<String, dynamic> levelData) {
-    final tasksController = TextEditingController(
-      text: (levelData['tasks'] as List).join(', '),
-    );
-    final translationsController = TextEditingController(
-      text: (levelData['translations'] as List).join(', '),
-    );
+  void _showEditDialog(String levelId, Map<String, dynamic> levelData) {
+    final tasksController = TextEditingController(text: (levelData['tasks'] as List).join(', '));
+    final translationsController = TextEditingController(text: (levelData['translations'] as List).join(', '));
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Edit Level $levelId'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: tasksController,
-                decoration: const InputDecoration(
-                  labelText: 'Tasks (comma-separated)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: translationsController,
-                decoration: const InputDecoration(
-                  labelText: 'Translations (comma-separated)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-            ],
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: tasksController,
+              decoration: const InputDecoration(labelText: 'Tasks (comma-separated)', border: OutlineInputBorder()),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: translationsController,
+              decoration: const InputDecoration(labelText: 'Translations (comma-separated)', border: OutlineInputBorder()),
+              maxLines: 2,
+            ),
+          ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              final tasks = tasksController.text
-                  .split(',')
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList();
-              final translations = translationsController.text
-                  .split(',')
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList();
+              final tasks = tasksController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+              final translations = translationsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
               
               if (tasks.length != translations.length) {
-                _showError('Tasks and translations must have the same count');
+                _showSnackBar('Tasks and translations must have same count', isError: true);
                 return;
               }
-              
               Navigator.pop(context);
-              updateLevel(levelId, tasks, translations);
+              _updateLevel(levelId, tasks, translations);
             },
             child: const Text('Update'),
           ),
@@ -246,150 +151,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned.fill(
-              child: Image.asset(
-                'assets/images/homescreen/background_image.png',
-                fit: BoxFit.fill,
-              ),
-            ),
+            Positioned.fill(child: Image.asset('assets/images/homescreen/background_image.png', fit: BoxFit.fill)),
             Container(color: const Color.fromARGB(59, 0, 0, 0)),
             Column(
               children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Admin Dashboard',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Welcome Admin (AID: ${widget.user['aid']})',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: loadDashboardData,
-                            icon: const Icon(Icons.refresh, color: Colors.white),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await _authService.logout();
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (_) => LoginScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.logout, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Stats Cards
-                if (!isLoading) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    height: 100,
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildStatCard('Total Students', stats['total_students']?.toString() ?? '0', Icons.people)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildStatCard('Active Students', stats['active_students']?.toString() ?? '0', Icons.people_alt)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildStatCard('Total Levels', stats['total_levels']?.toString() ?? '0', Icons.layers)),
-                        const SizedBox(width: 8),
-                        Expanded(child: _buildStatCard('Stars Awarded', stats['total_stars_awarded']?.toString() ?? '0', Icons.star)),
-                      ],
-                    ),
-                  ),
-                ],
-
-                // Tab Navigation
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => selectedTab = 0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: selectedTab == 0 ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: Text(
-                              'Students',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: selectedTab == 0 ? Colors.black : Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => selectedTab = 1),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: selectedTab == 1 ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: Text(
-                              'Levels',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: selectedTab == 1 ? Colors.black : Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Content
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : selectedTab == 0
-                            ? _buildStudentsTab()
-                            : _buildLevelsTab(),
-                  ),
-                ),
+                _buildHeader(),
+                if (!isLoading) _buildStatsCards(),
+                _buildTabNavigation(),
+                _buildContent(),
               ],
             ),
           ],
@@ -398,36 +167,113 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Admin Dashboard', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Welcome Admin (AID: ${widget.user['aid']})', style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            ],
           ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
-            ),
-            textAlign: TextAlign.center,
+          Row(
+            children: [
+              IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh, color: Colors.white)),
+              IconButton(
+                onPressed: () async {
+                  await _authService.logout();
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginScreen()));
+                },
+                icon: const Icon(Icons.logout, color: Colors.white),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCards() {
+    final statData = [
+      ('Total Students', stats['total_students'], Icons.people),
+      ('Active Students', stats['active_students'], Icons.people_alt),
+      ('Total Levels', stats['total_levels'], Icons.layers),
+      ('Stars Awarded', stats['total_stars_awarded'], Icons.star),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: statData.map((data) => Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(data.$3, color: Colors.white, size: 20),
+                const SizedBox(height: 2),
+                Text('${data.$2 ?? 0}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(data.$1, style: const TextStyle(color: Colors.white70, fontSize: 9), textAlign: TextAlign.center, maxLines: 2),
+              ],
+            ),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTabNavigation() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(25)),
+      child: Row(
+        children: ['Students', 'Levels'].asMap().entries.map((entry) {
+          final index = entry.key;
+          final title = entry.value;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedTab = index),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: selectedTab == index ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: selectedTab == index ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(16)),
+        child: isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : selectedTab == 0 ? _buildStudentsTab() : _buildLevelsTab(),
       ),
     );
   }
@@ -435,25 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStudentsTab() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Students (${students.length})',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                onPressed: loadStudents,
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
-        ),
+        _buildTabHeader('Students', students.length, () => _loadData()),
         Expanded(
           child: ListView.builder(
             itemCount: students.length,
@@ -464,21 +292,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.blue,
-                    child: Text(
-                      student['nickname'][0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                    child: Text(student['nickname'][0].toUpperCase(), style: const TextStyle(color: Colors.white)),
                   ),
                   title: Text(student['nickname']),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SID: ${student['sid']}'),
-                      Text('Level ${student['current_level']} • ${student['total_stars']} stars'),
-                    ],
-                  ),
+                  subtitle: Text('SID: ${student['sid']}\nLevel ${student['current_level']} • ${student['total_stars']} stars'),
                   trailing: IconButton(
-                    onPressed: () => deleteStudent(student['uid'], student['nickname']),
+                    onPressed: () => _deleteStudent(student['uid'], student['nickname']),
                     icon: const Icon(Icons.delete, color: Colors.red),
                   ),
                 ),
@@ -491,30 +310,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLevelsTab() {
-    final levelsList = levels.entries.toList()
-      ..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+    final levelsList = levels.entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
 
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Levels (${levels.length})',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                onPressed: loadLevels,
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
-        ),
+        _buildTabHeader('Levels', levels.length, () => _loadData()),
         Expanded(
           child: ListView.builder(
             itemCount: levelsList.length,
@@ -528,10 +328,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: ExpansionTile(
                   title: Text('Level $levelId'),
                   subtitle: Text('${levelData['tasks']?.length ?? 0} tasks'),
-                  trailing: IconButton(
-                    onPressed: () => _showEditLevelDialog(levelId, levelData),
-                    icon: const Icon(Icons.edit),
-                  ),
+                  trailing: IconButton(onPressed: () => _showEditDialog(levelId, levelData), icon: const Icon(Icons.edit)),
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
@@ -543,13 +340,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             levelData['tasks']?.length ?? 0,
                             (i) => Padding(
                               padding: const EdgeInsets.only(left: 16, top: 4),
-                              child: Row(
-                                children: [
-                                  Text('${i + 1}. ${levelData['tasks'][i]}'),
-                                  const Text(' → '),
-                                  Text(levelData['translations'][i]),
-                                ],
-                              ),
+                              child: Text('${i + 1}. ${levelData['tasks'][i]} → ${levelData['translations'][i]}'),
                             ),
                           ),
                         ],
@@ -562,6 +353,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTabHeader(String title, int count, VoidCallback onRefresh) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('$title ($count)', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh)),
+        ],
+      ),
     );
   }
 }
