@@ -41,27 +41,28 @@ class AuthService {
     }
   }
 
-  Future<Map<String, dynamic>?> login(String email, String password) async {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+Future<Map<String, dynamic>?> login(String email, String password) async {
+  await FirebaseAuth.instance.signInWithEmailAndPassword(
+    email: email,
+    password: password,
+  );
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+  final response = await http.post(
+    Uri.parse('$baseUrl/login'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'email': email,
+      'password': password,
+    }),
+  );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception(jsonDecode(response.body)['detail']);
-    }
+  if (response.statusCode == 200) {
+    final userData = jsonDecode(response.body);
+    return userData;
+  } else {
+    throw Exception(jsonDecode(response.body)['detail']);
   }
+}
 
   Future<void> logout() async {
     await FirebaseAuth.instance.signOut();
