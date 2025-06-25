@@ -59,7 +59,7 @@ class _TaskScreenState extends State<TaskScreen> {
       return;
     }
 
-    _showDialog('Analyzing...', loading: true);
+    _showDialog('Please Wait..', loading: true);
 
     try {
       final dir = await getTemporaryDirectory();
@@ -104,7 +104,7 @@ class _TaskScreenState extends State<TaskScreen> {
         content: loading 
           ? const Column(
               mainAxisSize: MainAxisSize.min,
-              children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Analyzing...')],
+              children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Checking..')],
             )
           : content != null ? Text(content) : null,
         actions: loading ? null : [
@@ -204,8 +204,8 @@ class _TaskScreenState extends State<TaskScreen> {
                             return GestureDetector(
                               onTap: () => _openCanvasOverlay(i),
                               child: Container(
-                                width: 70,
-                                height: 70,
+                                width: 50,
+                                height: 50,
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.grey.shade300, width: 2),
                                   borderRadius: BorderRadius.circular(12),
