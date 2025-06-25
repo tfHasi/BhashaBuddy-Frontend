@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -22,14 +23,21 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await _auth.login(_emailCtrl.text.trim(), _passCtrl.text);
       if (user != null) {
+        final bool isAdmin = user['type'] == 'admin';
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen(user: user)),
+          MaterialPageRoute(
+            builder: (_) => isAdmin
+                ? DashboardScreen(user: user)
+                : HomeScreen(user: user),
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Login failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
     } finally {
       setState(() => _loading = false);
     }
@@ -119,8 +127,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset('assets/images/homescreen/background_image.png',
-                  fit: BoxFit.cover),
+              child: Image.asset(
+                'assets/images/homescreen/background_image.png',
+                fit: BoxFit.cover,
+              ),
             ),
             Container(color: Colors.black.withOpacity(0.3)),
             Center(
@@ -130,15 +140,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      Text('Welcome Back',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900)),
+                      Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('Sign in to your account',
-                          style:
-                              TextStyle(color: Colors.white70, fontSize: 16)),
+                      Text(
+                        'Sign in to your account',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
                       SizedBox(height: 40),
 
                       _styledTextField(
@@ -163,8 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 16),
 
                       _styledButton('Sign Up', () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => SignupScreen()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => SignupScreen()),
+                        );
                       }, isOutline: true),
                     ],
                   ),
