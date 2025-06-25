@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import './widgets/bottom_navbar.dart';
 import './widgets/back_button.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-
   const SettingsScreen({super.key, required this.user});
 
   @override
@@ -98,21 +99,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          // Account (students only)
+                          // Account
                           if (widget.user['type'] == 'student')
                             _buildCard(
                               'Account',
                               Column(
                                 children: [
                                   _buildInfoRow('Student Name', widget.user['nickname']?.toString() ?? 'User'),
-                                  _buildInfoRow('Total Stars', '⭐ ${widget.user['stars'] ?? 0}'),
-                                  const SizedBox(height: 12),
                                   ElevatedButton.icon(
-                                    onPressed: () {},
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Reset Progress'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-                                  ),
+                                    onPressed: () async {
+                                      await AuthService().logout();
+                                      Navigator.pushReplacement(
+                                        context,
+                                      MaterialPageRoute(builder: (_) => LoginScreen()),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.logout),
+                                   label: const Text('Logout'),),
                                 ],
                               ),
                             ),
